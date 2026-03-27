@@ -1,0 +1,63 @@
+export const SUBSCALE_MAP = {
+  cognitive_capacity: {
+    "Sustained Attention Stability": "sustained_attention",
+    "Working Memory Integrity": "working_memory",
+    "Cognitive Flexibility": "cognitive_flexibility",
+    "Inhibitory Control": "inhibitory_control",
+    "Decision Fatigue Resistance": "decision_fatigue",
+    "Metacognitive Monitoring": "metacognition",
+    "Cognitive Load Tolerance": "cognitive_load",
+    "Task Initiation & Completion Control": "task_execution",
+  },
+
+  recovery_readiness: {
+    "Sleep Architecture": "sleep",
+    "Circadian Regulation": "circadian",
+    "Physiological Recovery Capacity": "recovery_capacity",
+    "Physical Activity Load & Balance": "physical_load",
+    "Nutritional Stability & Regulation": "nutrition",
+    "Stress Physiology & Autonomic Regulation": "stress_response",
+    "Hormonal & Energy Regulation Perception": "energy_regulation",
+    "Inflammation & Systemic Resilience": "inflammation",
+    "Environmental & Behavioural Recovery Ecology": "recovery_ecology",
+  },
+
+  immersion_flow: {
+    "Temporal Absorption": "absorption",
+    "Creativity & Generative Thinking": "creativity",
+    "Deep Work Structure": "deep_work",
+    "Integrated Performance Risk Engagement": "risk_engagement",
+    "Autotelic Drive": "intrinsic_drive",
+    "Immersion Recovery & Re-entry": "reentry",
+    "Goal Clarity & Task Definition": "goal_clarity",
+    "Feedback Sensitivity": "feedback",
+    "Distraction Resistance": "distraction",
+    "Challenge-Skill Calibration": "challenge_skill",
+  },
+
+  strategic_identity: {
+    "Purpose Clarity": "purpose",
+    "Identity Coherence": "identity",
+    "Long-Term Strategic Orientation": "long_term",
+    "Value Alignment": "values",
+    "Internal Conflict & Fragmentation": "conflict",
+    "Ambition Calibration": "ambition",
+    "Agency & Ownership": "agency",
+    "Role Integration": "role_integration",
+    "Moral & Decision Integrity": "integrity",
+    "Narrative Stability": "narrative",
+  },
+
+  friction_entropy: {
+    "Digital Overload": "digital",
+    "Context Switching Density": "context_switch",
+    "Environmental Entropy": "environment",
+    "Social & Relational Drag": "social_drag",
+    "Structural Inefficiency": "inefficiency",
+    "Reactive Workload": "reactive",
+    "Information Congestion": "information",
+    "Decision Noise": "decision_noise",
+    "Boundary Erosion": "boundaries",
+    "Cognitive Residue": "residue",
+  },
+};
