@@ -118,7 +118,7 @@ export default function SignupPage() {
   return (
     <>
       <Card className="w-120 p-10">
-        <h5 className="text-xl mb-2 font-semibold">Create Secure Account</h5>
+        <h5 className="text-xl mb-2 font-semibold">Create Secure Account.</h5>
 
         <p className="mb-6 font-light opacity-65">
           Complete your account setup to access the Neuro Kaizen Performance
