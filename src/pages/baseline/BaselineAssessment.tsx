@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DOMAIN_COLORS } from "../../constants/domains";
-import { getAssessmentQuestions, submitAnswer } from "../../api/baselineApi";
+import { getBaselineResults, getAssessmentQuestions, submitAnswer } from "../../api/baselineApi";
 import QuestionRow from "../../features/baseline/components/QuestionRow";
 import AssessmentNavigation from "../../features/baseline/components/AssessmentNavigation";
 import { getDraftStatusConfig } from "../../features/baseline/utils/status";
@@ -16,14 +16,8 @@ type ApiResponse = {
   nextDisabled: boolean;
   previousDisabled: boolean;
   isSubmitted: boolean;
-  draftStatus: string;
-  progress: {
-    completed: number;
-    total: number;
-  };
+  // Note: progress and draftStatus are fetched via the state API now
 };
-
-
 
 export default function BaselineAssessment(){
   const navigate = useNavigate();
@@ -37,7 +31,7 @@ export default function BaselineAssessment(){
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [saveStatus, setSaveStatus] = useState<"" | "Saving" | "Saved">("");
- const storageKey = "baseline_start_time";
+  const storageKey = "baseline_start_time";
 
   const [startTime] = useState(() => {
     const stored = localStorage.getItem(storageKey);
@@ -49,20 +43,27 @@ export default function BaselineAssessment(){
 
   const { data, isLoading, error } = useQuery<ApiResponse>({
     queryKey: ["assessment-questions", page],
-queryFn: () => getAssessmentQuestions(page, "baseline"),
+    queryFn: () => getAssessmentQuestions(page, "baseline"),
     staleTime: 1000 * 60 * 5,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
 
+  const { data: stateData } = useQuery({
+    queryKey: ["dashboard-data"],
+    queryFn: () => getBaselineResults(),
+  });
+
+  const apiState = stateData?.data || stateData;
+
   useEffect(() => {
-    if (data?.isSubmitted === true) {
+    if (data?.isSubmitted === true || apiState?.isBaselineSubmitted) {
       navigate(`${basePath}/results`);
     }
-  }, [data?.isSubmitted, basePath, navigate]);
+  }, [data?.isSubmitted, apiState?.isBaselineSubmitted, basePath, navigate]);
 
   const questions = data?.data || [];
-  const draftStatus = data?.draftStatus;
+  const draftStatus = apiState?.draftStatus || "draft";
   const currentStatus = getDraftStatusConfig(draftStatus);
 
   useEffect(() => {
@@ -127,9 +128,9 @@ queryFn: () => getAssessmentQuestions(page, "baseline"),
 
   const handleSaveAndExit = () => navigate("/dashboard");
   const handleReview = () => navigate(`${basePath}/review`);
-
-  const completed = data?.progress?.completed || 0;
-  const total = data?.progress?.total || 200;
+  
+  const completed = apiState?.progress?.completed || 0;
+  const total = apiState?.progress?.total || 200;
   const minRequired = 180;
   const canReview = completed >= minRequired;
   const QUESTIONS_PER_PAGE = questions.length || 10; // fallback
@@ -165,10 +166,10 @@ queryFn: () => getAssessmentQuestions(page, "baseline"),
   );
 
   useEffect(() => {
-    if (data?.progress?.completed === 0) {
+    if (apiState?.progress?.completed === 0) {
       setAnswers({});
     }
-  }, [data?.progress?.completed]);
+  }, [apiState?.progress?.completed]);
 
   const TIME_PER_QUESTION = 7;
 

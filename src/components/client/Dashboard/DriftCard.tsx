@@ -1,79 +1,88 @@
+import { useState } from "react";
 import { getSeverityStyle } from "../../../features/baseline/utils/severity";
 import Card from "../../ui/Card";
 
 type DriftItem = {
   domain: string;
   zScore: number;
-  drift: "normal" | "warning" | "critical" | "high";
+  drift: string;
 };
 
 type Props = {
   drift: DriftItem[];
   mode: "analysis";
-};
-
-
-
-const getZLabel = (z: number) => {
-  if (z <= -2) return "Critical";
-  if (z <= -1) return "Declining";
-  if (z < 1) return "Stable";
-  if (z < 2) return "Elevated";
-  return "Peak";
+  onSelect?: (domain: string) => void;
 };
 
 const formatZScore = (z: number) => {
-  // clamp range
   const clamped = Math.max(-2.5, Math.min(2.5, z));
-
-  // normalize to 0–100
-  const normalized = ((clamped + 2.5) / 5) * 100;
-
-  return Math.round(normalized);
+  return Math.round(((clamped + 2.5) / 5) * 100);
 };
 
-const DriftCard = ({ drift }: Props) => {
-  return (
-    <Card className="p-6 rounded-xl">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-400">Drift Monitoring</p>
+const DriftCard = ({ drift, onSelect }: Props) => {
+  const [active, setActive] = useState<string | null>(null);
 
-        <span className="text-xs text-red-400">
-          ● Active
-        </span>
+  const formatDriftLabel = (drift: string) => {
+    const d = drift.toLowerCase();
+    if (d.includes("stabilisation")) return "Needs Attention";
+    if (d.includes("drift")) return "Declining";
+    if (d.includes("expansion")) return "Improving";
+    return drift;
+  };
+
+  return (
+    <Card className="min-h-66.5 flex flex-col p-0 overflow-hidden">
+      <div className="p-6 border-b border-white/5 flex justify-between items-center">
+        <h6 className="text-white font-bold text-lg mb-0.5">Monitoring</h6>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Active</span>
+        </div>
       </div>
 
-      {/* Drift List */}
-      <div className="mt-4 space-y-3">
+      <div className="p-6 space-y-4 flex-1">
         {drift.map((d, i) => {
-  const style = getSeverityStyle(d.drift);
+          const style = getSeverityStyle(d.drift);
+          const score = formatZScore(d.zScore);
+          const isActive = active === d.domain;
 
-  return (
-    <div
-      key={i}
-      className={`flex justify-between items-center text-sm p-4 rounded ${style.bg}`}
-    >
-      <span className="text-gray-300 capitalize">
-        {d.domain}
-      </span>
+          return (
+            <div
+              key={i}
+              onClick={() => {
+                setActive(d.domain);
+                onSelect?.(d.domain);
+              }}
+              className={`
+                relative p-4 rounded-xl cursor-pointer border transition-all duration-300
+                ${isActive ? "bg-white/5 border-secondary/30" : "bg-white/[0.02] border-white/5 hover:bg-white/5"}
+              `}
+            >
+              <div className="flex justify-between items-center text-sm mb-3">
+                <span className="text-white font-semibold capitalize tracking-tight">
+                  {d.domain}
+                </span>
 
-      <div className="flex items-center gap-3">
-  <span className="text-xs text-gray-500">
-    {formatZScore(d.zScore)} / 100
-  </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-gray-500 font-medium">
+                    {score}% Stability
+                  </span>
 
-  <span className="text-xs text-gray-500">
-    {getZLabel(d.zScore)}
-  </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border border-white/5 ${style.bg} ${style.text}`}>
+                    {formatDriftLabel(d.drift)}
+                  </span>
+                </div>
+              </div>
 
-  <span className={`font-medium ${style.text}`}>
-    {d.drift.toUpperCase()}
-  </span>
-</div>
-    </div>
-  );
-})}
+              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-1000 ${style.text.replace("text", "bg")}`}
+                  style={{ width: `${score}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </Card>
   );

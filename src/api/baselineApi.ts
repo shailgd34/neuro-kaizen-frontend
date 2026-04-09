@@ -1,30 +1,28 @@
 import api from "./axios";
 
-// export const getBaselineQuestions = async (page: number) => {
-//   const response = await api.get(
-//     `/clients/questions?page=${page}&limit=8`,
-//   );
-//   return response.data;
-// };
-
-// export const getBaselineProgress = async () => {
-//   const response = await api.get(
-//     `/clients/questions?page=1&limit=8`
-//   );
-
-//   return response.data;
-// };
+export const savePhase2Progress = async (payload: { page: number }) => {
+  const response = await api.post("/clients/phase2-progress", payload);
+  return response.data;
+};
 
 
 export const getAssessmentQuestions = async (
   page: number,
-  type: "baseline" | "weekly",
-  week: number = 0
+  type: "baseline" | "weekly" = "baseline",
+  week: number = 0,
+  domain?: string,
+  limit: number = 8
 ) => {
-  const response = await api.get(
-    `/clients/questions?page=${page}&limit=8&type=${type}&week=${week}`
-  );
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    type,
+    week: String(week)
+  });
 
+  if (domain) query.set("domain", domain);
+
+  const response = await api.get(`/clients/questions?${query.toString()}`);
   return response.data;
 };
 
@@ -34,6 +32,7 @@ type SubmitAnswerPayload = {
   questionId: string;
   answer: number;
   domain: string;
+  type?: "baseline" | "weekly";
 };
 
 export const submitAnswer = async (payload: SubmitAnswerPayload) => {
@@ -45,10 +44,10 @@ export const submitAnswer = async (payload: SubmitAnswerPayload) => {
   return response.data;
 };
 
-type AssessmentType = "baseline" | "weekly";
+type AssessmentType = "baseline" | "weekly" | "phase2";
 
-export const submitAssessment = async (type: AssessmentType) => {
-  return api.post("/clients/submit-assignment", { type });
+export const submitAssessment = async (type: AssessmentType, extra?: { domain?: string; week?: number }) => {
+  return api.post("/clients/submit-assignment", { type, ...extra });
 };
 
 export const getBaselineResults = async () => {
@@ -133,11 +132,14 @@ export const updateQuestion = async (data: any) => {
 
 
 type WeeklyPayload = {
-  week: number;
-  sleep: number;
-  recovery: number;
-  clarity: number;
-  friction: number;
+  week?: number;
+  domain?: string;
+  sleep?: number;
+  recovery?: number;
+  clarity?: number;
+  friction?: number;
+  flow?: number;
+  identity?: number;
   reflection?: string;
 };
 
@@ -149,3 +151,12 @@ export const submitWeeklyCheckin = async (payload: WeeklyPayload) => {
 
   return response.data;
 };
+
+export const updateDomainScore = async (payload: { week: number; domain: string }) => {
+  console.log("📡 API CALL: updateDomainScore", payload);
+  const response = await api.post("/clients/updateDomainScore", payload);
+  return response.data;
+};
+
+
+

@@ -13,15 +13,8 @@ type Props = {
 };
 
 const TrendChart = ({ trend }: Props) => {
-  const categories = trend.map((item) => `W${item.week}`);
+  const categories = trend.map((item) => `Week ${item.week}`);
   const scores = trend.map((item) => item.nkpi);
-
-  // trend direction
-  const first = scores[0] ?? 0;
-  const last = scores[scores.length - 1] ?? 0;
-  const isImproving = last >= first;
-
-  const lineColor = isImproving ? "#22C55E" : "#EF4444";
 
   // rolling average
   const rollingAvg = scores.map((_, i, arr) => {
@@ -35,29 +28,32 @@ const TrendChart = ({ trend }: Props) => {
       toolbar: { show: false },
       zoom: { enabled: false },
       background: "transparent",
+      animations: {
+        enabled: true,
+        speed: 800,
+      }
     },
 
     stroke: {
       curve: "smooth",
-      width: [2, 2],
-      dashArray: [0, 5],
+      width: [3, 2],
+      dashArray: [0, 4],
     },
 
-    colors: [lineColor, "#6B7280"],
+    colors: ["#EDDC90", "#4B5563"],
 
     fill: {
       type: "gradient",
       gradient: {
         shade: "dark",
         type: "vertical",
-        gradientToColors: ["#1F2937"],
-        opacityFrom: 0.25,
-        opacityTo: 0.02,
+        opacityFrom: 0.1,
+        opacityTo: 0,
       },
     },
 
     grid: {
-      borderColor: "#1F2937",
+      borderColor: "rgba(255,255,255,0.05)",
       strokeDashArray: 4,
       padding: { left: 10, right: 10 },
     },
@@ -68,6 +64,7 @@ const TrendChart = ({ trend }: Props) => {
         style: {
           colors: "#6B7280",
           fontSize: "11px",
+          fontWeight: 500
         },
       },
       axisBorder: { show: false },
@@ -79,6 +76,7 @@ const TrendChart = ({ trend }: Props) => {
         style: {
           colors: "#6B7280",
           fontSize: "11px",
+          fontWeight: 500
         },
         formatter: (val) => val.toFixed(0),
       },
@@ -86,6 +84,9 @@ const TrendChart = ({ trend }: Props) => {
 
     tooltip: {
       theme: "dark",
+      style: {
+        fontSize: '11px',
+      }
     },
 
     markers: {
@@ -94,31 +95,34 @@ const TrendChart = ({ trend }: Props) => {
     },
 
     legend: {
-      show: false,
+      show: true,
+      position: 'top',
+      horizontalAlign: 'right',
+      fontSize: '11px',
+      labels: {
+        colors: '#6B7280'
+      },
+      markers: {
+      }
     },
   };
 
   const series = [
     {
-      name: "NKPI",
+      name: "Score",
       data: scores,
     },
     {
-      name: "Rolling Avg",
+      name: "Trend",
       data: rollingAvg,
     },
   ];
 
   return (
-    <Card>
-      <div className="mb-4 px-5 pt-5">
-        <p className="text-sm text-gray-400">
-          Performance Trend Analysis
-        </p>
-
-        <p className="text-xs text-gray-500 mt-1">
-          Weekly NKPI trend with rolling average smoothing
-        </p>
+    <Card className="p-0 overflow-hidden">
+      <div className="p-6 pb-2">
+        <h6 className="text-white font-bold text-lg mb-1">Performance Trend</h6>
+        <p className="text-xs text-gray-500 font-medium">Progress over time</p>
       </div>
 
       <div className="px-2 pb-4">

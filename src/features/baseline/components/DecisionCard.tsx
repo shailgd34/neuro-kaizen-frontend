@@ -1,46 +1,77 @@
-
-import { generateDecision } from "../utils/generateDecision";
 import Card from './../../../components/ui/Card';
 
 type Props = {
-  domains: any[];
+  summary: any;
   mode: string;
 };
 
-const DecisionCard = ({ domains, mode }: Props) => {
+
+
+const DecisionCard = ({ summary, mode }: Props) => {
   if (mode !== "analysis") return null;
 
-  const decision = generateDecision(domains);
+  const primary = summary?.primaryIssue;
+  const secondary = summary?.secondaryIssue;
+
+  const isCritical = summary?.overallStatus === "Critical";
 
   return (
-    <Card className="space-y-3">
-      <p className="text-sm text-gray-400">Performance Decision</p>
+    <Card className=" space-y-5">
 
-      {/* Primary Issue */}
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-gray-400">Performance Decision</p>
+
+        <span
+          className={`text-xs font-medium px-2 py-1 rounded ${
+            isCritical
+              ? "bg-red-500/10 text-red-400"
+              : "bg-green-500/10 text-green-400"
+          }`}
+        >
+          {summary?.overallStatus}
+        </span>
+      </div>
+
+      {/* PRIMARY */}
       <div>
-        <p className="text-xs text-gray-500">Primary Issue</p>
-        <p className="text-sm text-red-400 font-medium">
-          {decision.primaryIssue}
+        <p className="text-xs text-gray-500 mb-1">Primary Issue</p>
+
+        <p className="text-lg font-semibold text-white">
+          {primary?.key?.replaceAll("_", " ")}
         </p>
       </div>
 
-      {/* Secondary */}
-      {decision.secondaryIssue && (
-        <div>
-          <p className="text-xs text-gray-500">Secondary Factors</p>
-          <p className="text-sm text-gray-300">
-            {decision.secondaryIssue}
+      {/* INSIGHTS */}
+      <div className="space-y-2">
+        {primary?.insights?.map((i: string, idx: number) => (
+          <p key={idx} className="text-sm text-gray-300 leading-relaxed">
+            • {i}
           </p>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* Action */}
+      {/* DIVIDER */}
+      <div className="border-t border-white/5" />
+
+      {/* SECONDARY */}
       <div>
-        <p className="text-xs text-gray-500">Recommended Action</p>
+        <p className="text-xs text-gray-500 mb-1">Secondary Factor</p>
+
         <p className="text-sm text-gray-300">
-          {decision.action}
+          {secondary?.key?.replaceAll("_", " ")}
         </p>
       </div>
+
+      {/* ACTION */}
+      <div className="pt-3 border-t border-white/10">
+        <p className="text-xs text-gray-500 mb-1">Recommended Action</p>
+
+        <p className="text-sm text-white leading-relaxed">
+          {primary?.recommendation}
+        </p>
+      </div>
+
     </Card>
   );
 };

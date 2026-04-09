@@ -8,7 +8,7 @@ import Input from "../../components/ui/Input";
 import Select from "../../components/ui/Select";
 import { Pencil, Trash } from "lucide-react";
 import DomainBadge from "../ui/DomainBadge";
-import { DIAGNOSIS_TYPES, DOMAIN_OPTIONS } from "../../constants/domains";
+import { DOMAIN_OPTIONS } from "../../constants/domains";
 import { toast } from "react-toastify";
 import StatusDialog from "../ui/StatusDialog";
 
@@ -25,7 +25,7 @@ export default function BaselineQuestionList({ onEdit }: Props) {
   const [page, setPage] = useState(1);
 
   const [domain, setDomain] = useState("");
-  const [week, setWeek] = useState("");
+  const [week] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["questions", page, debouncedSearch, domain, week],
@@ -90,26 +90,26 @@ export default function BaselineQuestionList({ onEdit }: Props) {
               }
             />
 
-            <Select
+            {/* <Select
               options={DIAGNOSIS_TYPES}
               placeholder="Select Diagnosis"
               value={week}
               onChange={(e) => setWeek(e.target.value)}
-            />
+            /> */}
           </div>
         </div>
 
         {/* TABLE */}
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto mt-3">
           <table className="w-full text-left">
-            <thead className="text-gray-400 text-sm border-b border-borderColor py-3">
+            <thead className="text-gray-400 text-sm border-b border-borderColor py-4 bg-primary mt-3">
               <tr>
-                <th className="text-left py-3">Question with no.</th>
+                <th className="text-left py-3 px-3">Question with no.</th>
                 <th className="text-center py-3">Domain</th>
-                <th className="text-center py-3">Diagnosis Type</th>
+                <th className="text-center py-3">Subscale</th>
 
-                <th className="text-right py-3">Actions</th>
+                <th className="text-right py-3 px-3">Actions</th>
               </tr>
             </thead>
 
@@ -126,8 +126,11 @@ export default function BaselineQuestionList({ onEdit }: Props) {
                     key={q.id}
                     className="border-b border-borderColor text-sm border-dashed py-4"
                   >
-                    <td className="max-w-xl">
-                      {q.question_no}. {q.text}
+                    <td className="max-w-md py-2 px-3 flex items-start gap-2">
+                      <div>
+                        {q.question_no}.</div> <div>
+                          {q.text}
+                        </div>
                     </td>
 
                     <td className="text-center">
@@ -135,7 +138,7 @@ export default function BaselineQuestionList({ onEdit }: Props) {
                     </td>
 
                     <td className="text-center">
-                      {Number(q.week) === 0 ? "Baseline" : `Week ${q.week}`}
+                      {q.subscale || "-"}
                     </td>
 
                     <td className="text-right space-x-2 py-2">

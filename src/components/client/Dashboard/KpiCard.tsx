@@ -4,106 +4,95 @@ type Props = {
   data: {
     value: number;
     baseline?: number;
-    driftStatus?: "normal" | "warning" | "critical";
+    driftStatus?: string;
+    weakestDomain?: string;
   };
   mode: "analysis";
 };
 
-const KpiCard = ({ data }: Props) => {
-  const { value, baseline, driftStatus } = data;
-
-  const delta =
-    baseline !== undefined ? value - baseline : null;
-
-  const isNegative = delta !== null && delta < 0;
-
-  const deltaColor =
-    delta === null
-      ? "text-white"
-      : isNegative
-      ? "text-red-400"
-      : "text-green-400";
-
-  // 🟢 Drift color
-  const driftColor =
-    driftStatus === "critical"
-      ? "text-red-400"
-      : driftStatus === "warning"
-      ? "text-yellow-400"
-      : "text-green-400";
-
-  // 🧠 Interpretation (this is key)
-  const getInterpretation = () => {
-    if (!driftStatus) return "";
-
-    if (driftStatus === "critical")
-      return "Performance is significantly below baseline";
-
-    if (driftStatus === "warning")
-      return "Performance is showing early signs of decline";
-
-    return "Performance is stable";
+const getStatusConfig = (status?: string) => {
+  const s = status?.toLowerCase() || "";
+  if (s.includes("stabilisation") || s.includes("required") || s.includes("critical")) {
+    return {
+      color: "text-rose-400",
+      bg: "bg-rose-500/10",
+      label: "Needs Attention",
+      message: "Performance is below baseline",
+    };
+  }
+  if (s.includes("drift") || s.includes("declining") || s.includes("risk")) {
+    return {
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
+      label: "Declining",
+      message: "Minor performance decline",
+    };
+  }
+  if (s.includes("expansion") || s.includes("improving") || s.includes("peak")) {
+    return {
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+      label: "Improving",
+      message: "Performance is trending up",
+    };
+  }
+  return {
+    color: "text-gray-400",
+    bg: "bg-white/5",
+    label: "Stable",
+    message: "Performance is stable",
   };
+};
+
+const KpiCard = ({ data }: Props) => {
+  const { value, baseline, driftStatus, weakestDomain } = data;
+  const delta = baseline !== undefined ? Math.round(value - baseline) : null;
+  const status = getStatusConfig(driftStatus);
 
   return (
-    <Card className="p-6 rounded-xl flex flex-col justify-between min-h-66.5">
-      {/* Header */}
+    <Card className="space-y-6">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-400">
-          Net Key Performance Indicator
-        </p>
-
-        {/* 🔥 Drift badge */}
+        <p className="text-xs text-gray-500 font-medium">Performance Score</p>
         {driftStatus && (
-          <span className={`text-xs font-medium ${driftColor}`}>
-            ● {driftStatus.toUpperCase()}
+          <span className={`text-[10px] px-2 py-0.5 rounded-lg border border-white/5 font-semibold ${status.bg} ${status.color}`}>
+            {status.label}
           </span>
         )}
       </div>
 
-      {/* Main Score */}
-      <div className="mt-3">
-        <h3
-          className={`text-5xl font-semibold tracking-tight ${deltaColor}`}
-        >
+      <div>
+        <h2 className="text-4xl font-bold text-white tracking-tight">
           {Math.round(value)}
-        </h3>
-
-        <p className="text-xs text-gray-500 mt-1">
-          Current Score
-        </p>
+        </h2>
+        <p className="text-[11px] text-gray-500 mt-1 font-medium">Current Index</p>
       </div>
 
-      {/* 🧠 Interpretation line */}
-      {driftStatus && (
-        <p className="text-xs mt-3 text-gray-400">
-          {getInterpretation()}
-        </p>
-      )}
-
-      {/* Comparison */}
-      {baseline !== undefined && (
-        <div className="flex gap-8 mt-4 text-sm">
-          <div>
-            <p className="text-gray-500 text-xs">Baseline</p>
-            <p className="mt-1">
-              {Math.round(baseline)}
-            </p>
+      <div className="flex flex-col gap-1">
+        {driftStatus && (
+          <p className="text-xs text-gray-400 font-medium">
+            {status.message}
+          </p>
+        )}
+        {weakestDomain && (
+          <div className="text-[11px] text-gray-500 font-medium">
+            Area of focus: <span className="text-secondary font-semibold capitalize">{weakestDomain}</span>
           </div>
+        )}
+      </div>
 
+      {baseline !== undefined && (
+        <div className="flex gap-8 pt-4 border-t border-white/5">
           <div>
-            <p className="text-gray-500 text-xs">Change</p>
-            <p
-              className={`mt-1 ${
-                isNegative
-                  ? "text-red-400"
-                  : "text-green-400"
-              }`}
-            >
+            <p className="text-gray-500 text-[10px] font-medium uppercase tracking-tight">Baseline</p>
+            <p className="mt-0.5 text-white font-semibold">{Math.round(baseline)}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 text-[10px] font-medium uppercase tracking-tight">Change</p>
+            <p className={`mt-0.5 font-bold ${delta && delta < 0 ? "text-rose-400" : "text-emerald-400"}`}>
               {delta !== null && (
                 <>
                   {delta > 0 ? "+" : ""}
-                  {Math.round(delta)}
+                  {delta}%
                 </>
               )}
             </p>

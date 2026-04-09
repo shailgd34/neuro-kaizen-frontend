@@ -1,52 +1,82 @@
 type Domain = {
   key: string;
   label: string;
-  status: string;
+
+  domainStatus?: string; // Critical, Stable, Peak
+  trend?: string; // persistent_decline, declining
+
   drift: {
-    status: string;
+    status: string; // Systemic Drift, etc.
   };
 };
 
 export const generateInsights = (domains: Domain[]) => {
   const insights: string[] = [];
 
-  const declining = domains.filter(d => d.status === "declining");
-  const improving = domains.filter(d => d.status === "improving");
+  // ----------- Derived groups -----------
+
+  const declining = domains.filter(
+    d =>
+      d.trend === "persistent_decline" ||
+      d.drift.status === "Systemic Drift" ||
+      d.drift.status === "Stabilisation Required"
+  );
+
+  const improving = domains.filter(
+    d =>
+      d.drift.status === "Expansion" ||
+      d.drift.status === "Peak Activation"
+  );
 
   const cognitive = domains.find(d => d.key === "cognitive");
   const recovery = domains.find(d => d.key === "recovery");
   const friction = domains.find(d => d.key === "friction");
 
-  // 1. Burnout pattern
+  // ----------- 1. Burnout pattern -----------
+
   if (
-    cognitive?.status === "declining" &&
-    recovery?.status === "declining"
+    cognitive?.domainStatus === "Critical" &&
+    recovery?.domainStatus === "Critical"
   ) {
     insights.push(
-      "Cognitive capacity and recovery are both declining — possible overload or burnout risk."
+      "Cognitive capacity and recovery are critically low — possible overload or burnout risk."
     );
   }
 
-  // 2. Effort vs output mismatch
+  // ----------- 2. Effort vs output mismatch -----------
+
   if (
-    friction?.status === "improving" &&
+    (friction?.drift.status === "Expansion" ||
+      friction?.drift.status === "Peak Activation") &&
     declining.length >= 1
   ) {
     insights.push(
-      "Effort is increasing (friction improving) but performance is dropping — output mismatch detected."
+      "External conditions are improving, but performance is declining — internal capacity issue detected."
     );
   }
 
-  // 3. Instability
+  // ----------- 3. Instability -----------
+
   if (declining.length >= 2 && improving.length >= 1) {
     insights.push(
-      "Mixed domain signals indicate instability rather than consistent progress."
+      "Mixed signals across domains suggest instability rather than consistent progress."
     );
   }
 
-  // 4. Fallback
+  // ----------- 4. Severe risk -----------
+
+  if (
+    domains.some(d => d.drift.status === "Stabilisation Required")
+  ) {
+    insights.push(
+      "Severe performance deviation detected — immediate attention required."
+    );
+  }
+
+  // ----------- 5. Fallback -----------
+
   if (insights.length === 0) {
-    insights.push("No major performance risks detected.");
+    insights.push("Performance is stable with no major risks detected.");
   }
 
   return insights;

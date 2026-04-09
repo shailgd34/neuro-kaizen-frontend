@@ -44,6 +44,7 @@ export interface DriftAlert {
 }
 
 export interface Domain {
+  current: any;
   key: string;
   label: string;
   score: number;

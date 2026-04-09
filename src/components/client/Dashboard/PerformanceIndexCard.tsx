@@ -1,108 +1,106 @@
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import Card from "../../ui/Card";
 
-type DomainScore = {
-  domain: string;
-  score: number;
+type Submission = {
+  type: "baseline" | "weekly";
+  week: number;
+  nkpi?: number;
 };
 
 type Props = {
-  baseline?: DomainScore[];
-  weekly?: DomainScore[];
+  submissions?: Submission[];
 };
 
 export default function PerformanceIndexCard({
-  baseline = [],
-  weekly = [],
+  submissions = [],
 }: Props) {
-  // ❌ No weekly data yet
-  if (!weekly.length) {
+  const latestSubmission = [...submissions]
+    .filter((s) => s.nkpi !== undefined)
+    .sort((a, b) => {
+        if (a.week !== b.week) return b.week - a.week;
+        return a.type === "weekly" ? -1 : 1;
+    })[0];
+
+  if (!latestSubmission) {
     return (
-      <Card className="p-6 text-center text-gray-400">
-        Performance index will be available after your first weekly check-in.
+      <Card className="flex items-center justify-center min-h-[160px] text-gray-500 italic text-sm text-center px-6">
+        Telemetry available once baseline is calculated.
       </Card>
     );
   }
 
-  // -------------------------------
-  // 🔹 CALCULATIONS (UNCHANGED CORE)
-  // -------------------------------
-  const avg = (arr: DomainScore[]) =>
-    arr.reduce((sum, item) => sum + item.score, 0) / arr.length;
+  const current = latestSubmission.nkpi ?? 0;
+  // Compare weekly vs weekly, or weekly vs baseline
+  const previous = submissions
+    .filter((s) => s.nkpi !== undefined && s !== latestSubmission)
+    .sort((a, b) => b.week - a.week)[0]?.nkpi ?? current;
 
-  const baselineAvg = baseline.length ? avg(baseline) : 0;
-  const weeklyAvg = avg(weekly);
+  const delta = current - previous;
 
-  const delta = weeklyAvg - baselineAvg;
-
-  const formattedScore = Math.round(weeklyAvg);
-  const formattedDelta = delta.toFixed(1);
-
-  const isPositive = delta >= 0;
+  const formattedScore = Math.round(current);
+  const formattedDelta = Math.abs(delta).toFixed(1);
 
   // -------------------------------
-  // 🔹 TREND INTERPRETATION (NEW)
+  // 🔹 TREND
   // -------------------------------
-  let trendLabel = "Stable";
-  let trendIcon = "→";
-  let trendColor = "text-gray-400";
+  let trendLabel: string;
+  let TrendIcon: any;
+  let trendColor: string;
+  let trendBg: string;
 
-  if (delta > 2) {
+  if (delta > 0.5) {
     trendLabel = "Improving";
-    trendIcon = "↑";
-    trendColor = "text-green-400";
-  } else if (delta < -2) {
+    TrendIcon = TrendingUp;
+    trendColor = "text-emerald-400";
+    trendBg = "bg-emerald-500/10";
+  } else if (delta < -0.5) {
     trendLabel = "Declining";
-    trendIcon = "↓";
-    trendColor = "text-red-400";
+    TrendIcon = TrendingDown;
+    trendColor = "text-rose-500";
+    trendBg = "bg-rose-500/10";
+  } else {
+    trendLabel = "Stable";
+    TrendIcon = Minus;
+    trendColor = "text-gray-500";
+    trendBg = "bg-gray-500/10";
   }
 
   // -------------------------------
   // 🔹 UI
   // -------------------------------
   return (
-    <Card className="p-6 flex flex-col gap-4 transition-all duration-300 hover:border-white/10 hover:bg-white/[0.02]">
-      {/* Title */}
-      <div className="text-xs uppercase tracking-wider text-gray-500">
-        Performance Index
-      </div>
+    <Card title="Performance Index" className="relative group overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[60px] pointer-events-none" />
+      
+      <div className="flex flex-col relative z-10">
+        <div className="flex items-center gap-2 mb-4 bg-white/5 w-fit px-2.5 py-1 rounded-lg border border-white/5">
+           <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+             {latestSubmission.week === 0 ? "Initial Baseline" : `Calibration Week ${latestSubmission.week}`}
+           </p>
+        </div>
 
-      {/* Main Value */}
-      <div className="flex items-end justify-between">
-        <div className="flex items-end gap-3">
-          <h2 className="text-4xl font-semibold text-white tracking-tight">
+        <div className="flex items-baseline gap-3 mb-6">
+          <h4 className="text-5xl font-bold text-white tracking-tight">
             {formattedScore}
-          </h2>
-
-          <span
-            className={`text-sm font-medium ${
-              isPositive ? "text-green-400" : "text-red-400"
-            }`}
-          >
-            {isPositive ? "+" : ""}
-            {formattedDelta}
-          </span>
+          </h4>
+          <div className={`flex items-center gap-1 font-bold text-xs ${trendColor} bg-white/5 px-2 py-0.5 rounded-lg border border-white/5`}>
+             {delta > 0 ? "+" : delta < 0 ? "-" : ""}{formattedDelta}
+          </div>
         </div>
-
-        {/* Trend */}
-        <div className={`text-sm font-medium ${trendColor}`}>
-          {trendIcon} {trendLabel}
+        
+        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-white/5 ${trendBg} ${trendColor} text-xs font-bold w-fit`}>
+          <TrendIcon size={14} />
+          {trendLabel}
         </div>
       </div>
 
-      {/* Description */}
-      <p className="text-sm text-gray-400 leading-relaxed">
-        Based on your latest weekly performance across all domains
-      </p>
-
-      {/* Baseline reference */}
-      {baseline.length > 0 && (
-        <div className="flex justify-between items-center pt-2 border-t border-white/5 text-xs text-gray-500">
-          <span>Baseline</span>
-          <span className="text-gray-300 font-medium">
-            {Math.round(baselineAvg)}
-          </span>
-        </div>
-      )}
+      <div className="mt-8 pt-4 border-t border-white/5 flex items-center justify-between">
+        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest opacity-60">
+          Neural-HUD Telemetry
+        </p>
+        <span className="text-[10px] text-secondary font-bold">NK-PID ACTIVE</span>
+      </div>
     </Card>
   );
 }

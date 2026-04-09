@@ -1,17 +1,15 @@
 interface LikertScaleProps {
   value?: number | null;
   onChange: (value: number) => void;
+  max?: number;
 }
 
-export default function LikertScale({ value, onChange }: LikertScaleProps) {
-
-  const scale = [1, 2, 3, 4, 5, 6, 7];
+export default function LikertScale({ value, onChange, max = 7 }: LikertScaleProps) {
+  const scale = Array.from({ length: max }, (_, i) => i + 1);
 
   return (
-    <div className="flex items-center gap-2">
-
+    <div className="flex items-center gap-1.5 md:gap-2">
       {scale.map((num) => {
-
         const isSelected = value === num;
 
         return (
@@ -19,18 +17,19 @@ export default function LikertScale({ value, onChange }: LikertScaleProps) {
             key={num}
             type="button"
             onClick={() => onChange(num)}
-            className={`w-10 h-10 border rounded-sm text-sm transition
-            ${
-              isSelected
-                ? "bg-[linear-gradient(90deg,#8F5E25_0%,#FBF4A1_50%,#8F5E25_100%)] text-black border-yellow-500"
-                : "bg-[#0F141A] border-[#30363F] text-gray-300 hover:bg-[#1A222C]"
-            }`}
+            className={`
+              w-9 h-9 md:w-11 md:h-11 border rounded-lg text-sm font-medium transition-all
+              ${
+                isSelected
+                  ? "gold-gradient text-black border-secondary shadow-lg shadow-secondary/20"
+                  : "bg-white/3 border-white/10 text-gray-400 hover:bg-white/8"
+              }
+            `}
           >
             {num}
           </button>
         );
       })}
-
     </div>
   );
 }
