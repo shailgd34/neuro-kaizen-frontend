@@ -8,18 +8,19 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Card from "../../ui/Card";
+import { useNavigate } from "react-router-dom";
 
-type DomainScore = {
+type AnalysisDomain = {
   domain: string;
-  score: number;
+  baseline: number;
+  current: number;
 };
 
 type Props = {
-  baseline?: DomainScore[];
-  weekly?: DomainScore[];
+  analysisDomains?: AnalysisDomain[];
 };
 
-// ✅ Domain label mapping (important)
+// Simple label mapping
 const DOMAIN_LABELS: Record<string, string> = {
   cognitive: "Cognitive",
   recovery: "Recovery",
@@ -27,117 +28,107 @@ const DOMAIN_LABELS: Record<string, string> = {
 };
 
 export default function DomainRadarChart({
-  baseline = [],
-  weekly = [],
+  analysisDomains = [],
 }: Props) {
-  const hasBaseline = baseline.length > 0;
-  const hasWeekly = weekly.length > 0;
+  const navigate = useNavigate();
 
-  const data = baseline.map((baseItem) => {
-    const weeklyItem = weekly.find((w) => w.domain === baseItem.domain);
-
-    return {
-      domain:
-        DOMAIN_LABELS[baseItem.domain] ||
-        baseItem.domain.charAt(0).toUpperCase() +
-          baseItem.domain.slice(1),
-
-      baseline: Number(baseItem.score.toFixed(0)),
-      weekly: weeklyItem
-        ? Number(weeklyItem.score.toFixed(0))
-        : null,
-    };
-  });
-
-  if (!hasBaseline) {
+  // -------------------------------
+  // 🔹 EMPTY STATE
+  // -------------------------------
+  if (!analysisDomains.length) {
     return (
-      <Card className="p-6 text-center text-gray-400">
-        No domain data available yet.
+      <Card className="flex items-center justify-center min-h-[300px] text-gray-500 italic text-sm">
+        Data will appear after your first check-in.
       </Card>
     );
   }
 
-  return (
-    <Card className="p-6 transition-all duration-300 hover:border-white/10 hover:bg-white/[0.02]">
-      {/* Title */}
-      <h6 className="text-sm text-gray-400 mb-6">
-        Domain Performance
-      </h6>
+  // -------------------------------
+  // 🔹 DATA PREP
+  // -------------------------------
+  const data = analysisDomains.map((d) => ({
+    domain:
+      DOMAIN_LABELS[d.domain] ||
+      d.domain.charAt(0).toUpperCase() + d.domain.slice(1),
 
-      <div className="w-full h-80">
+    baseline: Math.round(d.baseline),
+    current: Math.round(d.current),
+    originalDomain: d.domain, // Keep original for navigation
+  }));
+
+  // -------------------------------
+  // 🔹 UI
+  // -------------------------------
+  return (
+    <Card title="Performance Balance" className="relative group">
+      <div className="w-full h-[280px]">
         <ResponsiveContainer>
-          <RadarChart data={data}>
-            {/* Grid */}
+          <RadarChart data={data} outerRadius="75%" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            {/* ... PolarGrid, PolarAngleAxis, etc unchanged ... */}
             <PolarGrid
               stroke="rgba(255,255,255,0.06)"
-              radialLines={false}
+              radialLines={true}
+              strokeDasharray="2 2"
             />
-
-            {/* Labels */}
             <PolarAngleAxis
               dataKey="domain"
               stroke="#9CA3AF"
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fontWeight: 500 }}
             />
-
-            {/* Radius */}
             <PolarRadiusAxis
               angle={30}
               domain={[0, 100]}
-              stroke="rgba(255,255,255,0.08)"
-              tick={{ fontSize: 10 }}
+              stroke="rgba(255,255,255,0.03)"
+              tick={false}
+              axisLine={false}
             />
-
-            {/* 🟡 Baseline (secondary, faded) */}
             <Radar
               name="Baseline"
               dataKey="baseline"
-              stroke="#6B7280"
-              fill="#6B7280"
-              fillOpacity={0.05}
+              stroke="#4B5563"
+              fill="#4B5563"
+              fillOpacity={0.08}
               strokeWidth={1}
+              strokeDasharray="4 4"
             />
-
-            {/* 🟢 Current (PRIMARY SIGNAL) */}
-            {hasWeekly && (
-              <Radar
-                name="Current"
-                dataKey="weekly"
-                stroke="#34d399"
-                fill="#34d399"
-                fillOpacity={0.25}
-                strokeWidth={2.5}
-              />
-            )}
-
-            {/* Tooltip */}
+            <Radar
+              name="Current"
+              dataKey="current"
+              stroke="#EDDC90"
+              fill="#EDDC90"
+              fillOpacity={0.2}
+              strokeWidth={2}
+            />
             <Tooltip
               contentStyle={{
-                background: "#0B1220",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "10px",
-                fontSize: "12px",
-                color: "#E5E7EB",
+                background: "#11161D",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "12px",
+                fontSize: "11px",
+                color: "#fff",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                padding: "10px"
               }}
-              labelStyle={{ color: "#9CA3AF" }}
+              labelStyle={{ color: "#9CA3AF", marginBottom: "4px", fontWeight: 600 }}
             />
           </RadarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mt-6 text-xs text-gray-400">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-gray-500"></span>
-          Baseline
-        </div>
-
-        {hasWeekly && (
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Current
-          </div>
-        )}
+      {/* Domain Quick Links */}
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mt-4 pt-4 border-t border-white/5">
+        {analysisDomains.map((d, idx) => (
+          <button 
+            key={idx}
+            onClick={() => navigate(`/domain/${d.domain}`)}
+            className="flex items-center gap-2 group/btn"
+          >
+             <div className="w-2 h-2 rounded-full bg-secondary group-hover/btn:scale-125 transition-transform" />
+             <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider group-hover/btn:text-white transition-colors">
+               {DOMAIN_LABELS[d.domain] || d.domain}
+             </span>
+          </button>
+        ))}
       </div>
     </Card>
   );

@@ -1,7 +1,14 @@
 import React from "react";
 
-type ButtonVariant = "primary" | "outline" | "light" | "soft" | "goldDark" | "white" | "outlineWhite";
-;
+type ButtonVariant = 
+  | "primary" 
+  | "outline" 
+  | "secondary" 
+  | "soft" 
+  | "goldDark" 
+  | "white" 
+  | "outlineWhite" 
+  | "ghost";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -9,18 +16,14 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "gold-gradient text-black hover:brightness-110",
-
-  outline: "border border-[#B88746] text-[#FDF5A6] hover:bg-[#B88746]/10",
-
-  light: "bg-gray-200 text-gray-800 hover:bg-gray-300",
-
-  soft: "bg-[#E7D79B] text-black hover:brightness-105",
-
-  goldDark:
-    "bg-[linear-gradient(90deg,#8F5E25_0%,#FBF4A1_50%,#8F5E25_100%)] text-black hover:brightness-110",
-  white: "bg-white text-black hover:bg-gray-300",
-  outlineWhite: "border border-white text-white hover:bg-gray-500/10",
+  primary: "bg-secondary text-black hover:opacity-90 active:scale-95",
+  secondary: "bg-white/10 text-white hover:bg-white/20",
+  outline: "border border-secondary/50 text-secondary hover:bg-secondary/10",
+  soft: "bg-secondary/20 text-secondary hover:bg-secondary/30",
+  goldDark: "bg-secondary text-black hover:opacity-90 shadow-lg shadow-secondary/10 text-black",
+  white: "bg-white text-black hover:bg-gray-100",
+  outlineWhite: "border border-white/20 text-white hover:bg-white/5",
+  ghost: "text-gray-400 hover:text-white hover:bg-white/5",
 };
 
 export default function Button({
@@ -31,7 +34,12 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`px-6 py-3  font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer ${variants[variant]} ${className}`}
+      className={`
+        px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 
+        flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
+        ${variants[variant]} 
+        ${className}
+      `}
       {...props}
     >
       {children}

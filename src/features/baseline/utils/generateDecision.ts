@@ -1,18 +1,24 @@
 type Domain = {
   key: string;
   label: string;
-  status: string;
+  domainStatus: string;
   drift: {
     status: string;
   };
+  trend?: string;
 };
 
 export const generateDecision = (domains: Domain[]) => {
-  const declining = domains.filter(d => d.status === "declining");
+  const declining = domains.filter(
+    (d) =>
+      d.trend === "persistent_decline" ||
+      d.drift.status === "Systemic Drift" ||
+      d.drift.status === "Stabilisation Required",
+  );
 
-  const cognitive = domains.find(d => d.key === "cognitive");
-  const recovery = domains.find(d => d.key === "recovery");
-  const friction = domains.find(d => d.key === "friction");
+  const cognitive = domains.find((d) => d.key === "cognitive");
+  const recovery = domains.find((d) => d.key === "recovery");
+  const friction = domains.find((d) => d.key === "friction");
 
   let primaryIssue = "Stable Performance";
   let secondaryIssue = "";
@@ -20,35 +26,31 @@ export const generateDecision = (domains: Domain[]) => {
 
   // ----------- Case 1: Burnout pattern -----------
   if (
-    cognitive?.status === "declining" &&
-    recovery?.status === "declining"
+    cognitive?.domainStatus === "Critical" &&
+    recovery?.domainStatus === "Critical"
   ) {
     primaryIssue = "Cognitive Decline";
     secondaryIssue = "Recovery Breakdown";
 
     action =
-      "Reduce workload and prioritise recovery. Focus on sleep, mental breaks, and lowering cognitive strain.";
+      "Reduce workload and prioritise recovery. Focus on sleep and lowering cognitive strain.";
   }
 
   // ----------- Case 2: Effort mismatch -----------
-  else if (
-    friction?.status === "improving" &&
-    declining.length > 0
-  ) {
+  else if (friction?.drift.status === "Expansion" && declining.length > 0) {
     primaryIssue = "Effort-Output Mismatch";
-    secondaryIssue = declining.map(d => d.label).join(", ");
+    secondaryIssue = declining.map((d) => d.label).join(", ");
 
     action =
-      "Re-evaluate strategy. Increased effort is not translating into results—focus on effectiveness, not intensity.";
+      "Environment is improving but performance is not. Focus on internal capacity, not effort.";
   }
 
   // ----------- Case 3: General decline -----------
   else if (declining.length >= 2) {
     primaryIssue = "Performance Degradation";
-    secondaryIssue = declining.map(d => d.label).join(", ");
+    secondaryIssue = declining.map((d) => d.label).join(", ");
 
-    action =
-      "Stabilise key domains before pushing growth. Address weakest areas first.";
+    action = "Stabilise weakest domains before pushing growth.";
   }
 
   return {

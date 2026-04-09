@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Card from "../../components/ui/Card";
-import { AlertCircle, Clock } from "lucide-react";
+import { AlertCircle, Clock, ChevronRight, ArrowLeft } from "lucide-react";
 import {
   getAssessmentQuestions,
   submitAssessment,
+  getBaselineResults,
 } from "../../api/baselineApi";
 import { getAssessmentStartTime } from "../../constants/assessmentTime";
 import { useEffect, useState } from "react";
@@ -12,52 +13,61 @@ import { toast } from "react-toastify";
 import StatusDialog from "../../components/ui/StatusDialog";
 import Lottie from "lottie-react";
 import success from "../../lottie/success02.json";
+import Button from "../../components/ui/Button";
 
 export default function BaselineReview() {
-  const MIN_REQUIRED = 180;
   const [openDialog, setopenDialog] = useState(false);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const basePath = "/baseline";
   const assessmentPath = `${basePath}/assessment`;
 
-  const { data, isLoading } = useQuery({
+  const { data: questionsData, isLoading: isQuestionsLoading } = useQuery({
     queryKey: ["assessment-progress"],
-    queryFn: () => getAssessmentQuestions(1, "baseline"), // baseline always starts at page 1, weekly may start at page 0 if no questions answered
+    queryFn: () => getAssessmentQuestions(1, "baseline"),
     staleTime: 1000 * 60 * 5,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
 
-  const assessmentId = data?.assignmentId || "N/A";
+  const { data: stateData, isLoading: isStateLoading } = useQuery({
+    queryKey: ["dashboard-data"],
+    queryFn: () => getBaselineResults(),
+  });
+
+  const isLoading = isQuestionsLoading || isStateLoading;
+  const apiState = stateData?.data || stateData;
+
+  const completed = apiState?.progress?.completed || 0;
+  const total = apiState?.progress?.total || 200;
+  const MIN_REQUIRED = Math.ceil(total * 0.9);
+
+  const assessmentId = questionsData?.assignmentId || questionsData?.assessmentId || "N/A";
 
   const submitMutation = useMutation({
     mutationFn: () => submitAssessment("baseline"),
     onSuccess: () => {
       setopenDialog(true);
       const storageKey = "baseline_start_time";
-
       localStorage.removeItem(storageKey);
-      toast.success("Your Assesment Submitted");
-      navigate(`${basePath}/results`);
+      toast.success("Assessment submitted successfully");
     },
+    onError: () => {
+      toast.error("Failed to submit assessment. Please try again.");
+    }
   });
 
-  const isSubmitted = data?.isSubmitted;
+  const isSubmitted = apiState?.isBaselineSubmitted || questionsData?.isSubmitted;
   useEffect(() => {
     if (!isLoading && isSubmitted) {
-      navigate(`${basePath}/results`, {
-        replace: true,
-      });
+      navigate(`${basePath}/results`, { replace: true });
     }
   }, [isLoading, isSubmitted, navigate]);
+
   useEffect(() => {
     if (!openDialog) return;
-
     const timer = setTimeout(() => {
       navigate(`${basePath}/results`);
-    }, 2000); // 2 seconds feels natural
-
+    }, 2500);
     return () => clearTimeout(timer);
   }, [openDialog, navigate]);
 
@@ -65,41 +75,27 @@ export default function BaselineReview() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   useEffect(() => {
     if (!startTime) return;
-
     const interval = setInterval(() => {
       const seconds = Math.floor((Date.now() - startTime) / 1000);
       setElapsedSeconds(seconds);
     }, 1000);
-
     return () => clearInterval(interval);
   }, [startTime]);
 
   const elapsedMinutes = Math.floor(elapsedSeconds / 60);
 
-  const completed = data?.progress?.completed || 0;
-  const total = data?.progress?.total || 200;
-
   const unanswered = total - completed;
   const progress = Math.round((completed / total) * 100);
-  const QUESTIONS_PER_PAGE = 10; // must match backend pagination
-
+  const QUESTIONS_PER_PAGE = 10;
   const resumePage = Math.floor(completed / QUESTIONS_PER_PAGE) + 1;
 
-  const avgSecondsPerQuestion = completed > 0 ? elapsedSeconds / completed : 8;
-
-  const estimatedMinutes = unanswered
-    ? Math.ceil((unanswered * avgSecondsPerQuestion) / 60)
-    : 0;
-
   const isEligible = completed >= MIN_REQUIRED;
-  const canSubmit = isEligible;
 
   const handleSubmit = () => {
     if (!isEligible) {
       navigate(`${assessmentPath}?page=${resumePage}&fromReview=true`);
       return;
     }
-
     submitMutation.mutate();
   };
 
@@ -118,167 +114,145 @@ export default function BaselineReview() {
   }
 
   return (
-    <>
-      <Card className="max-w-6xl mx-auto p-10">
-        <h4 className="text-3xl font-semibold text-white mb-2">
-          Baseline Diagnostic — Final Review
-        </h4>
-
-        <p className="text-gray-400 mb-8">
-          Assessment complete. Review your responses before submitting your{" "}
-          baseline.
+    <Card className="max-w-4xl mx-auto py-8 px-6 animate-in fade-in duration-500">
+      <div className="mb-8">
+        <h4 className="text-white font-bold mb-2">Final Review</h4>
+        <p className="text-gray-400 text-sm">
+          Please review your progress before completing the assessment.
         </p>
+      </div>
 
-        {/* Stats Cards */}
-
-        <div className="grid grid-cols-3 gap-6 mb-4">
-          {/* Completion */}
-          <div className="bg-[#0F141A] border border-[#30363F] p-6 rounded-lg">
-            <p className="text-gray-500 text-sm mb-1">Completion</p>
-            <p className="text-3xl text-white font-bold">{progress}%</p>
-            <div className="w-full h-2 bg-gray-700 rounded mt-4">
-              <div
-                className="h-2 bg-green-500 rounded"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card className="bg-white/2 border-white/5 p-5">
+          <p className="text-gray-500 text-xs font-medium mb-1">Completion</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl text-white font-bold">{progress}%</span>
           </div>
-
-          {/* Responses */}
-          <div className="bg-[#0F141A] border border-[#30363F] p-6 rounded-lg">
-            <p className="text-gray-500 text-sm mb-1">Responses</p>
-
-            <p className="text-3xl text-white font-bold">
-              {completed}
-              <span className="text-gray-600 text-lg"> / {total}</span>
-            </p>
-
-            {unanswered > 0 ? (
-              <button
-                onClick={async () => {
-                  await queryClient.invalidateQueries({
-                    queryKey: ["assessment-questions"],
-                  });
-                  await queryClient.invalidateQueries({
-                    queryKey: ["assessment-progress"],
-                  });
-
-                  navigate(
-                    `${assessmentPath}?page=${resumePage}&fromReview=true`,
-                  );
-                }}
-                className="mt-2 text-xs text-secondary hover:text-amber-300 hover:underline"
-              >
-                {unanswered} unanswered — continue answering
-              </button>
-            ) : (
-              <p className="mt-2 text-xs text-green-400">
-                All questions answered
-              </p>
-            )}
+          <div className="w-full h-1.5 bg-white/5 rounded-full mt-4 overflow-hidden">
+            <div className="h-full bg-secondary rounded-full" style={{ width: `${progress}%` }} />
           </div>
+        </Card>
 
-          {/* Minimum Requirement */}
-          <div className="bg-[#0F141A] border border-[#30363F] p-6 rounded-lg">
-            <p className="text-gray-500 text-sm mb-1">Minimum Requirement</p>
-            <p className="text-3xl text-white font-bold">
-              {MIN_REQUIRED}
-              <span className="text-gray-600 text-lg"> responses</span>
-            </p>
+        <Card className="bg-white/2 border-white/5 p-5">
+          <p className="text-gray-500 text-xs font-medium mb-1">Total Answered</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl text-white font-bold">{completed}</span>
+            <span className="text-gray-500 text-sm">/ {total}</span>
           </div>
-        </div>
+          {unanswered > 0 ? (
+            <button
+              onClick={() => navigate(`${assessmentPath}?page=${resumePage}&fromReview=true`)}
+              className="mt-3 text-[11px] text-secondary hover:underline font-medium flex items-center gap-1"
+            >
+              Continue answering ({unanswered} left) <ChevronRight size={12} />
+            </button>
+          ) : (
+            <p className="mt-3 text-[11px] text-emerald-400 font-medium">All questions complete</p>
+          )}
+        </Card>
 
-        <div className="flex justify-between">
-          <p className="text-gray-400 text-sm text-center mb-8">
-            {completed} answered • {unanswered} remaining
-            {unanswered > 0 && <> • ~{estimatedMinutes} minutes to finish</>}
-          </p>
+        <Card className="bg-white/2 border-white/5 p-5">
+          <p className="text-gray-500 text-xs font-medium mb-1">Time Spent</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl text-white font-bold">{elapsedMinutes}</span>
+            <span className="text-gray-500 text-sm">minutes</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-4 text-[11px] text-gray-500">
+            <Clock size={12} /> Live tracking active
+          </div>
+        </Card>
+      </div>
 
-          <p className="text-gray-400 text-sm text-right mb-8 flex gap-2 justify-end">
-            Time spent on this assessment:{" "}
-            <span className="text-white flex gap-1 items-center">
-              <Clock width={14} /> {elapsedMinutes} minutes
-            </span>
+      {isEligible ? (
+        <div className="mb-8 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-start gap-3">
+          <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+            <CheckCircleIcon size={12} className="text-black" />
+          </div>
+          <p className="text-sm text-emerald-100 leading-relaxed">
+            You have met the minimum requirement of {MIN_REQUIRED} responses. You can submit now or keep answering for better accuracy.
           </p>
         </div>
-
-        {isEligible ? (
-          <div className="mb-8 text-gray-400 border-l-3 border-green-500 pl-4 bg-green-600/10 py-2">
-            <div>You have reached the minimum response threshold.</div>
-            <div className="mt-1">
-              You may submit now or complete the remaining questions for a more
-              accurate baseline.
-            </div>
-          </div>
-        ) : (
-          <div className="mb-8 text-red-400 border-l-2 border-red-500 pl-4 bg-red-600/10 py-2">
-            You have <strong>{unanswered}</strong> unanswered questions. Minimum{" "}
-            {MIN_REQUIRED} responses are required before submission.
-          </div>
-        )}
-
-        <div className="bg-[#0F141A] border border-[#30363F] p-6 rounded-lg mb-8">
-          <p className="text-gray-400 font-medium mb-3 flex gap-2">
-            <AlertCircle width={16} /> Important Notice
+      ) : (
+        <div className="mb-8 p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 flex items-start gap-3">
+          <AlertCircle size={18} className="text-rose-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-rose-100 leading-relaxed">
+            You have {unanswered} questions left. You need at least {MIN_REQUIRED} responses to submit your assessment.
           </p>
-
-          <ul className="text-gray-400 list-disc pl-6 space-y-2">
-            <>
-              <li>Baseline results cannot be modified after submission</li>
-              <li>Retakes require coach approval</li>
-              <li>This submission establishes your calibration anchor</li>
-            </>
-          </ul>
         </div>
+      )}
 
-        <div className="flex justify-between">
-          <button
-            onClick={async () => {
-              await queryClient.invalidateQueries({
-                queryKey: ["assessment-questions"],
-              });
-              await queryClient.invalidateQueries({
-                queryKey: ["assessment-progress"],
-              });
-
-              navigate(`${assessmentPath}?page=${resumePage}&fromReview=true`);
-            }}
-            className="border border-[#30363F] px-6 py-3 rounded text-gray-300 hover:bg-[#1A222C]"
-          >
-            Back to Assessment
-          </button>
-
-          <button
-            disabled={!canSubmit || submitMutation.isPending}
-            onClick={handleSubmit}
-            className={`px-8 py-3 rounded font-semibold transition ${
-              isEligible
-                ? "bg-gray-200 text-black hover:bg-white"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            {submitMutation.isPending ? "Submitting..." : "Submit Baseline "}
-          </button>
-        </div>
-
-        <p className="text-center text-xs text-gray-600 mt-10">
-          Assessment ID: {assessmentId} | Session expires in 45 minutes
-        </p>
+      <Card className="bg-white/2 border-white/5 p-6 mb-8">
+        <h6 className="text-white font-semibold mb-4 flex items-center gap-2">
+          <AlertCircle size={16} className="text-secondary" /> Important Info
+        </h6>
+        <ul className="text-sm text-gray-400 space-y-3 pl-1">
+          <li className="flex items-start gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary/40 mt-1.5 shrink-0" />
+            Once submitted, your baseline cannot be changed.
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary/40 mt-1.5 shrink-0" />
+            These results set the foundation for your performance tracking.
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary/40 mt-1.5 shrink-0" />
+            Results will be available immediately after submission.
+          </li>
+        </ul>
       </Card>
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-between pt-4 border-t border-white/5">
+        <Button
+          variant="outline"
+          onClick={() => navigate(`${assessmentPath}?page=${resumePage}&fromReview=true`)}
+          className="order-2 sm:order-1"
+        >
+          <ArrowLeft size={16} /> Back to questions
+        </Button>
+
+        <Button
+          variant="goldDark"
+          disabled={!isEligible || submitMutation.isPending}
+          onClick={handleSubmit}
+          className="order-1 sm:order-2 min-w-50"
+        >
+          {submitMutation.isPending ? "Submitting..." : "Submit assessment"}
+        </Button>
+      </div>
+
+      <p className="text-center text-[10px] text-gray-600 mt-12">
+        ID: {assessmentId}
+      </p>
 
       <StatusDialog
         open={openDialog}
-        onClose={() => setopenDialog(false)}
+        onClose={() => {}}
         icon={
-          <div className="w-24 h-24">
+          <div className="w-20 h-20">
             <Lottie animationData={success} loop={false} />
           </div>
         }
-        title={"Baseline Submitted"}
-        description={
-          "Your baseline diagnostic has been successfully submitted. Preparing your results..."
-        }
+        title="Assessment Submitted"
+        description="Your assessment has been successfully submitted. We are now preparing your results."
       />
-    </>
+    </Card>
+  );
+}
+
+function CheckCircleIcon({ size, className }: { size: number; className?: string }) {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="3" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   );
 }

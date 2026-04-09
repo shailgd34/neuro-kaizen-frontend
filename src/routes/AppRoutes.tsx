@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "../store/store";
 
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -27,10 +29,12 @@ import PerformanceDashboard from "../pages/client/PerformanceDashboard";
 import DomainDetails from "../pages/client/DomainDetails";
 
 import WeeklyCheckin from "../pages/weekly/WeeklyCheckin";
+import Phase2Page from "../pages/phase2/Phase2Page";
+import Phase2Result from "../pages/phase2/Phase2Result";
 import ProfileManage from "../pages/coach/ProfileManage";
 
 export default function AppRoutes() {
-  const token = sessionStorage.getItem("token");
+  const token = useSelector((state: RootState) => state.auth.token);
 
   return (
     <BrowserRouter>
@@ -94,7 +98,7 @@ export default function AppRoutes() {
             />
             <Route path="/baseline/review" element={<BaselineReview />} />
             <Route
-              path="performance-analytics"
+              path="/performance-analytics"
               element={<PerformanceDashboard />}
             />
             <Route path="/baseline/results" element={<BaselineResults />} />
@@ -102,8 +106,11 @@ export default function AppRoutes() {
             {/* Weekly (NEW CLEAN SYSTEM) */}
             <Route path="/weekly" element={<WeeklyCheckin />} />
             <Route path="/weekly/result" element={<WeeklyResult />} />
+            <Route path="/phase2" element={<Phase2Page />} />
+            <Route path="/phase2/result" element={<Phase2Result />} />
             <Route path="/history" element={<WeeklyHistory />} />
             <Route path="/domain/:domainId" element={<DomainDetails />} />
+
             
             <Route path="/client/profile" element={<ProfileManagement />} />
           </Route>

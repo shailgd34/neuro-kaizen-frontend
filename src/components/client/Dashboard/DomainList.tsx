@@ -7,7 +7,6 @@ import { DOMAINS } from "./../../../constants/domain";
 import { getSeverityStyle } from "../../../features/baseline/utils/severity";
 
 type DomainItem = {
-  [x: string]: any;
   key: string;
   label: string;
   score: number;
@@ -18,179 +17,135 @@ type DomainItem = {
   drift: {
     status: string;
   };
+  trend?: string;
 };
 
 type Props = {
   domains: DomainItem[];
-  mode: "active"; // only analysis mode
+  mode: "active";
 };
 
 const normalizeDomainKey = (key: string) => {
   if (!key) return key;
-
   if (key.includes("cognitive")) return "cognitive";
   if (key.includes("recovery")) return "recovery";
   if (key.includes("flow")) return "flow";
   if (key.includes("identity")) return "identity";
   if (key.includes("friction")) return "friction";
-
   return key;
 };
 
-const DomainList = ({ domains, mode }: Props) => {
+export default function DomainList({ domains }: Props) {
   const navigate = useNavigate();
 
-  // ----------- Normalize Score -----------
   const getNormalizedScore = (d: DomainItem) => {
     return d.direction === "lower_better" ? 100 - d.score : d.score;
   };
 
-  // ----------- Find Worst Domain -----------
-  const worstDomain = domains.reduce((worst, current) => {
-    return getNormalizedScore(current) < getNormalizedScore(worst)
-      ? current
-      : worst;
-  }, domains[0]);
+  const worstDomain = domains.length > 0 
+    ? domains.reduce((worst, current) => 
+        getNormalizedScore(current) < getNormalizedScore(worst) ? current : worst
+      , domains[0])
+    : null;
 
-  // ----------- Animated Scores -----------
-  const [animatedScores, setAnimatedScores] = useState<Record<string, number>>(
-    {},
-  );
+  const [animatedScores, setAnimatedScores] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const interval = setInterval(() => {
       setAnimatedScores((prev) => {
         const updated: Record<string, number> = {};
-
         domains.forEach((d) => {
           const current = prev[d.key] ?? 0;
-
           if (current < d.score) {
             updated[d.key] = Math.min(current + 1, d.score);
           } else {
             updated[d.key] = d.score;
           }
         });
-
         return updated;
       });
     }, 15);
-
     return () => clearInterval(interval);
   }, [domains]);
 
-  // ----------- Insight Generator -----------
-  const getInsight = (d: DomainItem) => {
-    if (d.volatility.level === "high") return "High variability detected";
-    if (d.volatility.level === "moderate") return "Fluctuations observed";
-    return "Stable performance";
-  };
-
   return (
-    <div className="space-y-4">
-      {/* ----------- Domain Cards ----------- */}
-      <div className="grid grid-cols-5 gap-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {domains.map((d) => {
           const domainKey = normalizeDomainKey(d.key);
           const domainConfig = DOMAINS.find((x) => x.key === domainKey);
-          const color = domainConfig?.color || "#6B7280";
+          const accentColor = domainConfig?.color || "#EDDC90";
 
           const normalized = getNormalizedScore(d);
-          const isWorst = d.key === worstDomain.key;
+          const isWorst = worstDomain && d.key === worstDomain.key;
           const severityStyle = getSeverityStyle(d.drift.status);
-
           const drift = getDriftConfig(d.drift.status);
+
+          const driftLabel = drift.label.toLowerCase().includes("stabilisation") ? "Critical" : 
+                            drift.label.toLowerCase().includes("drift") ? "Declining" :
+                            drift.label.toLowerCase().includes("expansion") ? "Improving" : "Stable";
 
           return (
             <div
               key={d.key}
               onClick={() => navigate(`/domain/${domainKey}`)}
-              className={`relative group bg-[#111827] p-4 rounded-xl border-l-2 transition-all duration-300 cursor-pointer hover:border-gray-600 ${
-                isWorst ? "ring-1 ring-red-400/40" : ""
-              } `}
-              style={{ borderColor: color }}
+              className={`
+                relative group p-5 rounded-2xl cursor-pointer
+                bg-white/[0.02] border border-white/5
+                transition-all duration-300 ease-out
+                hover:bg-white/[0.05] hover:border-white/10
+                ${isWorst ? "border-rose-500/30" : ""}
+              `}
             >
-              {/* Title */}
-              <p className="text-xs text-gray-400">{d.label}</p>
-
-              {mode === "active" && isWorst && (
-                <p className="text-[10px] text-red-400 mt-1">Focus Area</p>
-              )}
-
-              <p
-                className={`text-2xl font-semibold mt-2 ${severityStyle.text}`}
-              >
-                {animatedScores[d.key] ?? 0}
-              </p>
-
-              {/* Progress bar */}
-              <div className="mt-3">
-                <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${normalized}%`,
-                      backgroundColor: color,
-                      opacity: 0.85,
-                    }}
-                  />
-                </div>
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider">{d.label}</p>
+                {d.drift.status !== "inactive" && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border border-white/5 ${severityStyle.text} bg-white/5`}>
+                    {driftLabel}
+                  </span>
+                )}
               </div>
 
-              {/* Footer */}
-              <div className="mt-2 text-[11px] text-gray-400 flex justify-between">
-                <span>Volatility: {d.volatility.level}</span>
-
-                <div className="flex gap-2 items-center">
-                  {/* Drift */}
-                  {d.drift.status !== "inactive" && (
-                    <span className={`${drift.color} capitalize`}>
-                      {drift.label}
-                    </span>
-                  )}
-
-                  {/* NEW → Trend */}
-                  {d.status && (
-                    <span
-                      className={`capitalize ${
-                        d.status === "declining"
-                          ? "text-red-400"
-                          : "text-green-400"
-                      }`}
-                    >
-                      {d.status}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Tooltip */}
-              <div className="absolute hidden group-hover:block bottom-full mb-2 left-0 w-56 bg-black text-white text-xs p-2 rounded shadow-lg z-10">
-                <p className="font-medium mb-1">
-                  {domainConfig?.label || d.label}
+              <div className="flex items-baseline gap-2 mb-4">
+                <p className="text-3xl font-bold text-white tracking-tight">
+                  {animatedScores[d.key] ?? 0}
                 </p>
-                <p>Score: {d.score}</p>
-                <p>Volatility: {d.volatility.level}</p>
-                <p className="mt-1 text-gray-300">{getInsight(d)}</p>
+                {isWorst && (
+                  <span className="text-[10px] text-rose-400 font-medium">Focus</span>
+                )}
+              </div>
+
+              <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mb-4">
+                <div
+                  className="h-full transition-all duration-1000 ease-out"
+                  style={{
+                    width: `${normalized}%`,
+                    background: accentColor,
+                  }}
+                />
+              </div>
+
+              <div className="flex justify-between items-center text-[10px] text-gray-500 font-medium uppercase tracking-tight">
+                <span className="opacity-50">{d.volatility.level} volatility</span>
+                {d.trend === "persistent_decline" ? (
+                  <span className="text-rose-400 font-bold">↓</span>
+                ) : (
+                  <span className="text-emerald-400 font-bold">↑</span>
+                )}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* ----------- Primary Risk Insight ----------- */}
-      <Card className="bg-[#111827] p-5 rounded-xl">
-        <p className="text-sm text-gray-400 mb-2">Primary Risk Insight</p>
-
-        <p className="text-sm text-gray-300">
-          {worstDomain.label} is currently the weakest domain with{" "}
-          <span className="text-red-400">{worstDomain.score}</span> score. This
-          area shows the highest performance risk and may require focused
-          intervention.
-        </p>
-      </Card>
+      {worstDomain && (
+        <Card className="p-6 bg-rose-500/5 border-rose-500/20">
+          <p className="text-[10px] text-rose-400 font-bold uppercase tracking-wider mb-2">Priority Insight</p>
+          <p className="text-sm text-gray-300 leading-relaxed">
+            <span className="text-white font-semibold">{worstDomain.label}</span> is showing signs of performance drift. We recommend focusing on recovery strategies in this area to maintain stability.
+          </p>
+        </Card>
+      )}
     </div>
   );
-};
-
-export default DomainList;
+}

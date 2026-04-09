@@ -12,7 +12,6 @@ import Button from "../../components/ui/Button";
 import DriftAnalysisCard from "../../components/client/Dashboard/DriftAnalysisCard";
 import DecisionCard from "../../features/baseline/components/DecisionCard";
 import { MessageCircleWarningIcon } from "lucide-react";
-import type { Domain } from "../../types/dashboard";
 
 const getDriftStatus = (z: number) => {
   if (z <= -1.5) return "Stabilisation Required";
@@ -23,7 +22,7 @@ const getDriftStatus = (z: number) => {
   return "Stable";
 };
 
-const PerformanceDashboard = () => {
+const PerformanceDash = () => {
   const navigate = useNavigate();
 
   const { data, isLoading, isError } = useQuery({
@@ -80,9 +79,6 @@ const PerformanceDashboard = () => {
   const driftStatus = getDriftStatus(overallDrift?.zScore || 0);
 
   const phase2 = summary?.phase2;
-  const weakest = domains.reduce((min: Domain, d: Domain) =>
-  d.current < min.current ? d : min
-);
 
   // =========================
   // UI
@@ -121,7 +117,6 @@ const PerformanceDashboard = () => {
               value: latest?.nkpi || 0,
               baseline: apiData?.submissions?.[0]?.nkpi || 0,
               driftStatus,
-              weakestDomain: weakest?.domain,
             }}
             mode="analysis"
           />
@@ -138,6 +133,9 @@ const PerformanceDashboard = () => {
           />
         </div>
       </div>
+
+      {/* TREND */}
+      <TrendChart trend={trend} mode="analysis" />
 
       {/* DOMAIN LIST */}
       <Card>
@@ -172,17 +170,10 @@ const PerformanceDashboard = () => {
         />
       </Card>
 
-      {/* TREND */}
-      <TrendChart trend={trend} mode="analysis" />
+      {/* INSIGHTS */}
+      <Insights insights={summary?.insights || []} mode="analysis" />
 
-      <div className="flex gap-6">
-       
-      <div className="flex-1">
-        <Insights insights={summary?.insights || []} mode="analysis" />
-      </div>
-
-      <div className="flex-1">
-        
+      {/* PHASE 2 AUTO SECTION */}
       <Card className="p-4 flex justify-between items-center">
         <div>
           <p className="text-white font-medium mb-2">Deep Diagnostic</p>
@@ -203,8 +194,6 @@ const PerformanceDashboard = () => {
           </Button>
         )}
       </Card>
-      </div>
-      </div>
 
       {/* DRIFT ANALYSIS */}
       <DriftAnalysisCard domains={domains} mode={mode} />
@@ -215,4 +204,4 @@ const PerformanceDashboard = () => {
   );
 };
 
-export default PerformanceDashboard;
+export default PerformanceDash;

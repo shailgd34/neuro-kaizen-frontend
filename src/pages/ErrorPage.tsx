@@ -9,7 +9,7 @@ export default function ErrorPage() {
 
       {/* Illustration */}
       <img
-        src="../../public/assets/images/error.svg"
+        src="/public/assets/images/error.svg"
         alt="Page not found"
         className="w-120 mb-8"
       />
