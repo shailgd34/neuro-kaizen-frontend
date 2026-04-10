@@ -11,10 +11,16 @@ import Button from "../../components/ui/Button";
 import { getBaselineResults } from "../../api/baselineApi";
 import { DOMAIN_COLORS } from "./../../constants/domains";
 
-function CountdownTimer({ initialTime, gated = false }: { initialTime: number; gated?: boolean }) {
+function CountdownTimer({ initialTime, gated = false, onRefresh }: { initialTime: number; gated?: boolean; onRefresh?: () => void }) {
   const [timeLeft, setTimeLeft] = useState(initialTime);
+  const [hasRefreshed, setHasRefreshed] = useState(false);
 
   const [targetDate, setTargetDate] = useState(() => Date.now() + initialTime * 1000);
+
+  useEffect(() => {
+    setTimeLeft(initialTime);
+    setHasRefreshed(false);
+  }, [initialTime]);
 
   useEffect(() => {
     // Only update target if difference is significant (e.g. server sync)
@@ -25,14 +31,20 @@ function CountdownTimer({ initialTime, gated = false }: { initialTime: number; g
   }, [initialTime, targetDate]);
 
   useEffect(() => {
-    if (timeLeft <= 0) return;
+    if (timeLeft <= 0) {
+      if (initialTime > 0 && onRefresh && !hasRefreshed) {
+        setHasRefreshed(true);
+        onRefresh();
+      }
+      return;
+    }
     const timer = setInterval(() => {
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((targetDate - now) / 1000));
       setTimeLeft(remaining);
     }, 1000);
     return () => clearInterval(timer);
-  }, [targetDate, timeLeft]);
+  }, [targetDate, timeLeft, initialTime, onRefresh, hasRefreshed]);
 
   const formatTime = (secs: number) => {
     const h = String(Math.floor(secs / 3600)).padStart(2, "0");
@@ -69,7 +81,7 @@ function CountdownTimer({ initialTime, gated = false }: { initialTime: number; g
 export default function WeeklyResult() {
   const navigate = useNavigate();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["assessment-results"],
     queryFn: () => getBaselineResults(),
   });
@@ -93,18 +105,24 @@ export default function WeeklyResult() {
   const phase2 = apiData?.weeklyStatus;
   const isPhase2Pending = phase2?.phase2Pending === true;
   const isWeekSubmitted = phase2?.isCurrentWeekSubmitted === true;
-  const remainingTime = calibration?.remainingTime || 0;
+  const remainingTime = phase2?.remainingTime || calibration?.remainingTime || 0;
   const totalWeeks = calibration?.totalWeeks || 6;
-  const nextWeek = calibration?.currentWeek || 1;
+  const nextWeek = phase2?.currentWeek || calibration?.currentWeek || 1;
 
   const latestWeekly = {
-    week: latestMetric?.week || calibration?.currentWeek || 1,
+    week: latestMetric?.week || phase2?.currentWeek || calibration?.currentWeek || 1,
     nkpi: latestMetric?.nkpi_score || apiData?.nkpi || 0,
   };
 
   useEffect(() => {
     if (isLoading) return;
-    if (apiData?.userState === "baseline_pending" || apiData?.baseline?.status !== "completed") {
+    const isBaselineComplete = 
+      apiData?.isBaselineCompleted === true || 
+      apiData?.isBaselineSubmitted === true || 
+      apiData?.draftStatus === 'completed' ||
+      apiData?.baseline?.status === 'completed';
+
+    if (apiData?.userState === "baseline_pending" || !isBaselineComplete) {
       navigate("/baseline");
     }
   }, [apiData, isLoading, navigate]);
@@ -180,7 +198,7 @@ export default function WeeklyResult() {
           <p className="text-secondary text-xs font-medium">Week {latestWeekly.week}</p>
           <h4 className="text-white font-semibold">Weekly Results</h4>
           <div className="flex flex-wrap items-center gap-3">
-            <CountdownTimer initialTime={remainingTime} gated={isPhase2Pending} />
+            <CountdownTimer initialTime={remainingTime} gated={isPhase2Pending} onRefresh={refetch} />
             {remainingTime === 0 && !isWeekSubmitted && !isPhase2Pending && (
               <Button variant="goldDark" className="h-9 px-4 text-xs font-medium" onClick={() => navigate("/weekly")}>
                 Start Week {nextWeek} Check-in <ChevronRight className="ml-1 w-3.5 h-3.5" />

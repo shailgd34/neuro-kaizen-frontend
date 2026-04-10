@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+
 import { JoinedClientList } from "../../api/clientApi";
 import Card from "../ui/Card";
 import Pagination from "../ui/Pagination";
@@ -36,7 +38,9 @@ type ClientsResponse = {
 };
 
 export default function ClientTable() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
+
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
 
@@ -57,7 +61,8 @@ export default function ClientTable() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const clients = data?.data ?? [];
+  const clients = data?.data ?? data?.bookings ?? [];
+
 
   const getTimeAgo = (date?: string | null) => {
     if (!date) return "—";
@@ -138,17 +143,20 @@ export default function ClientTable() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-gray-400">
-                    <div className="flex justify-center items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                      Loading clients...
+                  <td colSpan={7} className="text-center py-10 text-gray-400">
+                    <div className="flex justify-center items-center gap-2 text-sm uppercase font-black tracking-widest opacity-50">
+                      <div className="w-5 h-5 border-2 border-secondary border-t-transparent rounded-full animate-spin"></div>
+                      Intelligence Engine Loading...
                     </div>
                   </td>
                 </tr>
               ) : clients.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-gray-400">
-                    No clients found
+                  <td colSpan={7} className="text-center py-20 text-gray-400">
+                    <div className="flex flex-col items-center gap-2 opacity-30">
+                       <span className="text-3xl">∅</span>
+                       <span className="text-xs uppercase font-black tracking-widest">No Active Client Profiles Found</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -225,10 +233,14 @@ transition-all duration-200
 
                       {/* Actions */}
                       <td className="text-center">
-                        <button className="px-3 py-1 rounded-md border border-white/10 text-xs text-gray-300 hover:bg-white/5 hover:border-white/20 transition">
+                        <button 
+                          onClick={() => navigate(`/clients/${client.id}`)}
+                          className="px-3 py-1 rounded-md border border-white/10 text-xs text-gray-300 hover:bg-white/5 hover:border-white/20 transition"
+                        >
                           View Details
                         </button>
                       </td>
+
                     </tr>
                   );
                 })

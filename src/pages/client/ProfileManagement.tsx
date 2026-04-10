@@ -8,7 +8,7 @@ import {
 } from "../../api/profileApi";
 
 import Input from "../../components/ui/Input";
-import { IdCardIcon, ShieldAlert } from "lucide-react";
+import { IdCardIcon, ShieldAlert, BadgeCheck, UploadCloud, Settings, Lock } from "lucide-react";
 import Button from "../../components/ui/Button";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../store/authSlice";
@@ -90,23 +90,23 @@ export default function ProfileManagement() {
   /* =========================
      UPDATE PASSWORD
   ========================= */
- const passwordMutation = useMutation({
-  mutationFn: updatePassword,
+  const passwordMutation = useMutation({
+    mutationFn: updatePassword,
 
-  onSuccess: () => {
-    toast.success("Password updated. Please login again.");
-    sessionStorage.clear();
-    window.location.href = "/login";
-  },
+    onSuccess: () => {
+      toast.success("Password updated. Please login again.");
+      sessionStorage.clear();
+      window.location.href = "/login";
+    },
 
-  onError: (error: any) => {
-    const message =
-      error?.response?.data?.message ||
-      "Something went wrong. Try again.";
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Try again.";
 
-    toast.error(message);
-  },
-});
+      toast.error(message);
+    },
+  });
 
   /* =========================
      HANDLERS
@@ -137,234 +137,298 @@ export default function ProfileManagement() {
   };
 
   const handleSavePassword = () => {
-  if (!password.oldPassword) {
-    toast.error("Old password is required");
-    return;
-  }
+    if (!password.oldPassword) {
+      toast.error("Old password is required");
+      return;
+    }
 
-  if (!password.newPassword) {
-    toast.error("New password is required");
-    return;
-  }
+    if (!password.newPassword) {
+      toast.error("New password is required");
+      return;
+    }
 
-  if (!password.confirmPassword) {
-    toast.error("Confirm password is required");
-    return;
-  }
+    if (!password.confirmPassword) {
+      toast.error("Confirm password is required");
+      return;
+    }
 
-  if (password.newPassword !== password.confirmPassword) {
-    toast.error("Passwords do not match");
-    return;
-  }
+    if (password.newPassword !== password.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
 
-  passwordMutation.mutate({
-    oldPassword: password.oldPassword,
-    newPassword: password.newPassword,
-    confirmPassword: password.confirmPassword,
-  });
-};
-
-
- 
+    passwordMutation.mutate({
+      oldPassword: password.oldPassword,
+      newPassword: password.newPassword,
+      confirmPassword: password.confirmPassword,
+    });
+  };
 
   return (
-    <>
-      <div className="">
-        {/* HEADER TABS */}
-        <div className="mb-6 border-b border-[#2A3441] flex gap-8">
+    <div className="mx-auto px-6 lg:px-10 py-8 animate-in fade-in zoom-in-95 duration-1000">
+      {/* HEADER TABS & HERO */}
+      <div className="relative mb-10 pb-8 border-b border-white/5">
+        <div className="absolute top-0 right-10 w-64 h-64 bg-secondary/5 blur-[120px] rounded-full pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
+          <div>
+            <div className="flex items-center gap-2 text-secondary text-xs font-bold uppercase tracking-widest mb-2">
+              <Settings className="w-4 h-4" /> Account Settings
+            </div>
+            <h4 className="text-3xl text-white font-bold tracking-tight">
+              Profile <span className="text-secondary">Management</span>
+            </h4>
+            <p className="text-gray-400 text-sm mt-2 max-w-xl leading-relaxed">
+              Update your personal details, secure your account, and manage your neural tracking preferences.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* SIDEBAR TABS */}
+        <Card className="w-full lg:w-64 shrink-0 p-3 bg-white/[0.02] border-white/5 space-y-2 lg:sticky lg:top-8">
           <button
             onClick={() => setActiveTab("general")}
-            className={`pb-3 text-sm flex items-center gap-2 ${
+            className={`w-full text-left px-4 py-3 text-sm font-medium rounded-xl flex items-center gap-3 transition-all ${
               activeTab === "general"
-                ? "text-yellow-400 border-b-2 border-yellow-400"
-                : "text-gray-400"
+                ? "bg-secondary/10 text-secondary border border-secondary/20 shadow-inner"
+                : "text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"
             }`}
           >
-            <IdCardIcon size={16} />
-            General
+            <IdCardIcon size={18} className={activeTab === "general" ? "text-secondary" : "opacity-70"} />
+            General Info
           </button>
 
           <button
             onClick={() => setActiveTab("security")}
-            className={`pb-3 text-sm flex items-center gap-2 ${
+            className={`w-full text-left px-4 py-3 text-sm font-medium rounded-xl flex items-center gap-3 transition-all ${
               activeTab === "security"
-                ? "text-yellow-400 border-b-2 border-yellow-400"
-                : "text-gray-400"
+                ? "bg-secondary/10 text-secondary border border-secondary/20 shadow-inner"
+                : "text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"
             }`}
           >
-            <ShieldAlert size={16} />
-            Security
+            <ShieldAlert size={18} className={activeTab === "security" ? "text-secondary" : "opacity-70"} />
+            Security & Login
           </button>
-        </div>
+        </Card>
 
         {/* ================= GENERAL ================= */}
         {activeTab === "general" && (
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
-            {/* AVATAR CARD */}
-            <Card className="text-center">
-              <div className="w-32 h-32 mx-auto rounded-full overflow-hidden bg-[#1A222C] mb-4 flex items-center justify-center">
-                {avatarPreview ? (
-                  <img
-                    src={avatarPreview}
-                    className="w-full h-full object-cover"
+          <div className="flex-1 animate-in fade-in slide-in-from-right-4 duration-500 w-full">
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-8">
+              
+              {/* FORM CARD */}
+              <Card className="bg-[#0B0E14] border-white/5 shadow-2xl relative overflow-hidden order-2 xl:order-1">
+                <div className="absolute top-0 right-0 w-full h-1 bg-linear-to-r from-transparent via-secondary/20 to-transparent" />
+                
+                <div className="mb-6 pb-4 border-b border-white/5">
+                  <h5 className="text-white font-bold text-lg">Personal Details</h5>
+                  <p className="text-gray-500 text-xs mt-1">Keep your contact information up to date.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input
+                    label="Full Name"
+                    name="name"
+                    value={form.name || ""}
+                    onChange={handleChange}
+                    placeholder="Enter your name"
+                    showIcon={false}
                   />
-                ) : (
-                  <span className="text-gray-500 text-sm">No Photo</span>
-                )}
-              </div>
 
-              <input
-                type="file"
-                id="avatarUpload"
-                onChange={handleAvatar}
-                className="hidden"
-              />
+                  <Input
+                    label="Email Address"
+                    name="email"
+                    value={form.email || ""}
+                    onChange={handleChange}
+                    placeholder="Enter your email"
+                    disabled
+                    showIcon={false}
+                  />
 
-              <label
-                htmlFor="avatarUpload"
-                className="cursor-pointer inline-block px-4 py-2 text-sm rounded-md border border-[#2A3441] text-gray-300 hover:border-yellow-400 hover:text-white transition"
-              >
-                Upload photo
-              </label>
+                  <Input
+                    label="Phone Number"
+                    name="phone"
+                    value={form.phone || ""}
+                    onChange={handleChange}
+                    placeholder="Enter phone number"
+                    showIcon={false}
+                  />
 
-              <p className="text-xs text-gray-500 mt-3">
-                Allowed *.jpeg, *.jpg, *.png, *.gif <br />
-                Max size of 3.1 MB
-              </p>
-            </Card>
+                  <Input
+                    label="Address"
+                    name="address"
+                    value={form.address || ""}
+                    onChange={handleChange}
+                    placeholder="Enter address"
+                    showIcon={false}
+                  />
 
-            {/* FORM CARD */}
-            <Card className="">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-0 gap-x-6">
-                <Input
-                  label="Name"
-                  name="name"
-                  value={form.name || ""}
-                  onChange={handleChange}
-                  placeholder="Enter your name"
-                  showIcon={false}
-                />
+                  <Input
+                    label="Country"
+                    name="country"
+                    value={form.country || ""}
+                    onChange={handleChange}
+                    placeholder="Enter country"
+                    showIcon={false}
+                  />
 
-                <Input
-                  label="Email"
-                  name="email"
-                  value={form.email || ""}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  disabled
-                  showIcon={false}
-                />
+                  <Input
+                    label="State / Region"
+                    name="state"
+                    value={form.state || ""}
+                    onChange={handleChange}
+                    placeholder="Enter state"
+                    showIcon={false}
+                  />
 
-                <Input
-                  label="Phone number"
-                  name="phone"
-                  value={form.phone || ""}
-                  onChange={handleChange}
-                  placeholder="Enter phone number"
-                  showIcon={false}
-                />
+                  <Input
+                    label="City"
+                    name="city"
+                    value={form.city || ""}
+                    onChange={handleChange}
+                    placeholder="Enter city"
+                    showIcon={false}
+                  />
 
-                <Input
-                  label="Address"
-                  name="address"
-                  value={form.address || ""}
-                  onChange={handleChange}
-                  placeholder="Enter address"
-                  showIcon={false}
-                />
+                  <Input
+                    label="ZIP Code"
+                    name="zip_code"
+                    value={form.zip_code || ""}
+                    onChange={handleChange}
+                    placeholder="Enter zip code"
+                    showIcon={false}
+                  />
+                </div>
 
-                <Input
-                  label="Country"
-                  name="country"
-                  value={form.country || ""}
-                  onChange={handleChange}
-                  placeholder="Enter country"
-                  showIcon={false}
-                />
+                <div className="mt-8 pt-6 border-t border-white/5 flex justify-end">
+                  <Button
+                    variant="goldDark"
+                    onClick={handleSaveProfile}
+                    disabled={updateMutation.isPending}
+                    className="min-w-40 h-11 text-sm font-bold shadow-lg"
+                  >
+                    {updateMutation.isPending && (
+                      <span className="w-4 h-4 mr-2 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                    )}
+                    {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </Card>
 
-                <Input
-                  label="State/region"
-                  name="state"
-                  value={form.state || ""}
-                  onChange={handleChange}
-                  placeholder="Enter state"
-                  showIcon={false}
-                />
-
-                <Input
-                  label="City"
-                  name="city"
-                  value={form.city || ""}
-                  onChange={handleChange}
-                  placeholder="Enter city"
-                  showIcon={false}
-                />
-
-                <Input
-                  label="Zip/code"
-                  name="zip_code"
-                  value={form.zip_code || ""}
-                  onChange={handleChange}
-                  placeholder="Enter zip code"
-                  showIcon={false}
-                />
-              </div>
-
-              <div className="mt-2 flex justify-start">
-                <Button
-                  variant="primary"
-                  onClick={handleSaveProfile}
-                  disabled={updateMutation.isPending}
-                  className="flex items-center gap-2"
-                >
-                  {updateMutation.isPending && (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {/* AVATAR CARD */}
+              <Card className="text-center bg-white/[0.02] border-white/5 order-1 xl:order-2 self-start flex flex-col items-center">
+                <div className="relative group w-32 h-32 mx-auto mb-6">
+                  <div className="absolute inset-0 bg-secondary/20 blur-xl group-hover:bg-secondary/40 transition-all duration-500 rounded-full" />
+                  <div className="relative w-full h-full rounded-full overflow-hidden bg-[#0A0D11] border-2 border-white/10 group-hover:border-secondary/50 transition-colors flex items-center justify-center shadow-xl">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    ) : (
+                      <IdCardIcon className="w-10 h-10 text-gray-600" />
+                    )}
+                  </div>
+                  {form.name && (
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full border-4 border-[#0F172A] flex items-center justify-center shrink-0 shadow-lg">
+                      <BadgeCheck size={16} className="text-white" />
+                    </div>
                   )}
-                  {updateMutation.isPending ? "Saving..." : "Save changes"}
-                </Button>
-              </div>
-            </Card>
+                </div>
+
+                <h6 className="text-white font-bold mb-1">{form.name || "User Profile"}</h6>
+                <p className="text-secondary text-xs font-medium mb-6 uppercase tracking-wider">{form.email || "Active User"}</p>
+
+                <input type="file" id="avatarUpload" onChange={handleAvatar} className="hidden" accept="image/png, image/jpeg, image/gif" />
+
+                <label
+                  htmlFor="avatarUpload"
+                  className="w-full cursor-pointer flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-wider rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-secondary/30 transition-all hover:text-secondary group"
+                >
+                  <UploadCloud size={16} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                  Upload Photo
+                </label>
+
+                <p className="text-[10px] text-gray-500 mt-4 font-medium uppercase tracking-widest leading-relaxed">
+                  Allowed JPEG, PNG, GIF.<br />Max size 3.1 MB.
+                </p>
+              </Card>
+
+            </div>
           </div>
         )}
 
         {/* ================= SECURITY ================= */}
         {activeTab === "security" && (
-          <Card className="mx-auto">
-            <div className="space-y-5">
-              <Input
-                name="oldPassword"
-                value={password.oldPassword}
-                onChange={handlePasswordChange}
-                type="password"
-                placeholder="Enter your old password"
-              />
-              <Input
-                name="newPassword"
-                value={password.newPassword}
-                onChange={handlePasswordChange}
-                type="password"
-                placeholder="Enter your New password"
-              />
-              <Input
-                name="confirmPassword"
-                value={password.confirmPassword}
-                onChange={handlePasswordChange}
-                type="password"
-                placeholder="Enter your New confirm password"
-              />
-
-              <div className="flex justify-center pt-2">
-                <Button
-                  onClick={handleSavePassword}
-                  disabled={passwordMutation.isPending}
-                >
-                  {passwordMutation.isPending ? "Updating..." : "Save changes"}
-                </Button>
+          <div className="flex-1 animate-in fade-in slide-in-from-right-4 duration-500 max-w-3xl w-full">
+            <Card className="bg-[#0B0E14] border-white/5 shadow-2xl relative overflow-hidden">
+              
+              <div className="mb-8 pb-4 border-b border-white/5 flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <h5 className="text-white font-bold text-lg">Change Password</h5>
+                  <p className="text-gray-500 text-sm mt-1 leading-relaxed">
+                    Ensure your account is using a long, random password to stay secure. 
+                    You will be required to log in again after updating your password.
+                  </p>
+                </div>
               </div>
+
+              <div className="space-y-6">
+                <div>
+                  <p className="text-white text-sm font-semibold mb-3">Current Password</p>
+                  <Input
+                    name="oldPassword"
+                    value={password.oldPassword}
+                    onChange={handlePasswordChange}
+                    type="password"
+                    placeholder="Enter your current password"
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-white/5">
+                  <p className="text-white text-sm font-semibold mb-3">New Password</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input
+                      name="newPassword"
+                      value={password.newPassword}
+                      onChange={handlePasswordChange}
+                      type="password"
+                      placeholder="Enter new password"
+                    />
+                    <Input
+                      name="confirmPassword"
+                      value={password.confirmPassword}
+                      onChange={handlePasswordChange}
+                      type="password"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-6 flex justify-end">
+                  <Button
+                    variant="goldDark"
+                    onClick={handleSavePassword}
+                    disabled={passwordMutation.isPending}
+                    className="min-w-48 h-11 text-sm font-bold"
+                  >
+                    {passwordMutation.isPending ? "Updating Password..." : "Update Password"}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            <div className="mt-6 p-4 rounded-xl bg-secondary/5 border border-secondary/10 flex items-start gap-4">
+              <ShieldAlert className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-400 leading-relaxed">
+                <strong className="text-gray-300">Security Check:</strong> Your password must be at least 8 characters long, include a number, and a special character to comply with our security protocols.
+              </p>
             </div>
-          </Card>
+          </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

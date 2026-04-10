@@ -1,6 +1,7 @@
 import { useSelector } from "react-redux";
 import { type RootState } from "../store/store";
 import { Link, NavLink, useLocation } from "react-router-dom";
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getBaselineResults } from "../api/baselineApi";
@@ -8,7 +9,6 @@ import {
   LayoutDashboard,
   Users,
   CalendarCheck,
-  FileText,
   ClipboardList,
   NotebookPen,
   Shield,
@@ -22,10 +22,10 @@ import {
   Activity,
   Brain,
   BarChart2,
-  GitBranch,
   Bell,
   BookOpen,
 } from "lucide-react";
+
 
 export default function Sidebar() {
   const { role, name } = useSelector((state: RootState) => state.auth);
@@ -41,8 +41,12 @@ export default function Sidebar() {
   const apiData = resultsData?.data;
   const weeklyStatus = apiData?.weeklyStatus;
   const isPhase2Active = weeklyStatus?.phase2Pending === true;
-  const isBaselineComplete = apiData?.baseline?.status === "completed";
-  const calibrationWeek = apiData?.calibration?.currentWeek;
+  const isBaselineComplete = 
+    apiData?.isBaselineCompleted === true || 
+    apiData?.isBaselineSubmitted === true || 
+    apiData?.draftStatus === 'completed' ||
+    apiData?.baseline?.status === 'completed';
+  const calibrationWeek = weeklyStatus?.currentWeek || apiData?.calibration?.currentWeek;
 
   // Routing: submitted OR phase2 active (week done) → results | available → check-in form
   const isWeekSubmitted = weeklyStatus?.isCurrentWeekSubmitted === true;
@@ -58,55 +62,53 @@ export default function Sidebar() {
   // ADMIN MENU
   // ─────────────────────────────────────────
   const adminMenu = [
-    {
-      section: "OVERVIEW",
-      items: [
-        { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-        {
-          name: "Client Management",
-          icon: Users,
-          children: [
-            { name: "All Clients", path: "/clients" },
-            { name: "Invitations", path: "/invitations" },
-          ],
-        },
-      ],
-    },
-    {
-      section: "ANALYTICS",
-      items: [
-        { name: "Client Analytics", icon: BarChart2, path: "/analytics" },
-        { name: "Drift Engine", icon: GitBranch, path: "/drift" },
-        { name: "Contribution Analysis", icon: FileText, path: "/contribution" },
-        { name: "Item Responses", icon: ClipboardList, path: "/responses" },
-      ],
-    },
-    {
-      section: "GOVERNANCE",
-      items: [
-        { name: "Weekly Overrides", icon: CalendarCheck, path: "/overrides" },
-        { name: "Notes Management", icon: NotebookPen, path: "/notes" },
-        { name: "Audit Log", icon: Shield, path: "/audit" },
-      ],
-    },
-    {
-      section: "CONFIGURATION",
-      items: [
-        { name: "Scoring Config", icon: Settings, path: "/scoring" },
-        { name: "Reminder Schedule", icon: Bell, path: "/reminders" },
-        { name: "MDC Framework", icon: Grid, path: "/mdc" },
-        { name: "Baseline Questions", icon: BookOpen, path: "/baselinequestions" },
-      ],
-    },
-    {
-      section: "SYSTEM",
-      items: [
-        { name: "Profile", icon: User, path: "/coach/profile" },
-        { name: "Session", icon: RotateCcw, path: "/session" },
-        { name: "Settings", icon: Settings, path: "/settings" },
-      ],
-    },
-  ];
+  {
+    section: "OVERVIEW",
+    items: [
+      { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+      {
+        name: "Client Management",
+        icon: Users,
+        children: [
+          { name: "All Clients", path: "/clients" },
+          { name: "Invitations", path: "/invitations" },
+        ],
+      },
+    ],
+  },
+  {
+    section: "ANALYTICS",
+    items: [
+      { name: "Client Analytics", icon: BarChart2, path: "/analytics" },
+      { name: "Item Responses", icon: ClipboardList, path: "/responses" },
+    ],
+  },
+  {
+    section: "GOVERNANCE",
+    items: [
+      { name: "Weekly Overrides", icon: CalendarCheck, path: "/overrides" },
+      { name: "Notes Management", icon: NotebookPen, path: "/notes" },
+      { name: "Audit Log", icon: Shield, path: "/audit" },
+    ],
+  },
+  {
+    section: "CONFIGURATION",
+    items: [
+      { name: "Scoring Config", icon: Settings, path: "/scoring" },
+      { name: "Reminder Schedule", icon: Bell, path: "/reminders" },
+      { name: "MDC Framework", icon: Grid, path: "/mdc" },
+      { name: "Baseline Questions", icon: BookOpen, path: "/baselinequestions" },
+    ],
+  },
+  {
+    section: "SYSTEM",
+    items: [
+      { name: "Profile", icon: User, path: "/coach/profile" },
+      { name: "Session", icon: RotateCcw, path: "/session" },
+      { name: "Settings", icon: Settings, path: "/settings" },
+    ],
+  },
+];
 
   // ─────────────────────────────────────────
   // CLIENT MENU

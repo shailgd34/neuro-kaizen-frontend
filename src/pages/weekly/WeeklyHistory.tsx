@@ -22,27 +22,14 @@ export default function WeeklyHistory() {
   const history = useMemo(() => {
     const rawSubmissions = apiData?.submissions || [];
     const weeklyMetrics = apiData?.calibration?.weeklyMetrics || [];
-    const baseline = apiData?.baseline;
-
     // Create a base map of all submissions by week
     const weeksMap = new Map<number, any>();
 
-    // 1. Add Baseline (Week 0)
-    if (baseline?.status === 'completed') {
-      weeksMap.set(0, {
-        type: 'baseline',
-        week: 0,
-        nkpi: baseline.score,
-        submittedAt: baseline.completedAt,
-        domains: baseline.domains || []
-      });
-    }
-
-    // 2. Add raw submissions (if any)
+    // 1. Add raw submissions (if any)
     rawSubmissions.forEach((s: any) => {
       weeksMap.set(s.week, {
         ...s,
-        domains: s.domains || []
+        domains: s.domainScores || s.domains || [] // new api returns domainScores
       });
     });
 
@@ -68,12 +55,14 @@ export default function WeeklyHistory() {
       if (!item.nkpi && item.nkpi !== 0) status = "pending";
 
       // Map correct domain data depending on the type
-      let domains = [];
-      if (item.type === "baseline" || item.week === 0) {
-        domains = apiData?.baseline?.domains || [];
-      } else {
-        const matchingWeekly = weeklyMetrics.find((w: any) => w.week === item.week);
-        domains = matchingWeekly?.domains || [];
+      let domains = item.domains || [];
+      if (domains.length === 0) {
+        if (item.type === "baseline" || item.week === 0) {
+          domains = apiData?.baseline?.domains || [];
+        } else {
+          const matchingWeekly = weeklyMetrics.find((w: any) => w.week === item.week);
+          domains = matchingWeekly?.domains || [];
+        }
       }
 
       return {

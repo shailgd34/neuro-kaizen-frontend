@@ -37,8 +37,8 @@ export default function BaselineReview() {
   const isLoading = isQuestionsLoading || isStateLoading;
   const apiState = stateData?.data || stateData;
 
-  const completed = apiState?.progress?.completed || 0;
-  const total = apiState?.progress?.total || 200;
+  const completed = questionsData?.progress?.completed || apiState?.progress?.completed || 0;
+  const total = questionsData?.progress?.total || apiState?.progress?.total || 200;
   const MIN_REQUIRED = Math.ceil(total * 0.9);
 
   const assessmentId = questionsData?.assignmentId || questionsData?.assessmentId || "N/A";

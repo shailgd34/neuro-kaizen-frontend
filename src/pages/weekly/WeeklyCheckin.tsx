@@ -23,17 +23,32 @@ export default function WeeklyCheckin() {
 
   const apiData = baselineData?.data;
   const calibration = apiData?.calibration;
-  const baseline = apiData?.baseline;
-  const week = calibration?.currentWeek || 1;
-  const remainingTime = calibration?.remainingTime || 0;
-  const isLocked = remainingTime > 0;
-  const isMetricsSubmitted = calibration?.isWeekSubmitted || false;
+  const weeklyStatus = apiData?.weeklyStatus;
+  const baselineSubmission = apiData?.submissions?.find((s: any) => s.type === "baseline");
+  const isBaselineComplete = 
+    apiData?.isBaselineCompleted === true || 
+    apiData?.isBaselineSubmitted === true || 
+    apiData?.draftStatus === 'completed' ||
+    apiData?.baseline?.status === 'completed';
+
+  const baseline = apiData?.baseline || (isBaselineComplete ? { status: "completed", score: baselineSubmission?.nkpi, domains: baselineSubmission?.domainScores } : undefined);
+  const week = weeklyStatus?.currentWeek || calibration?.currentWeek || 1;
+  const remainingTime = weeklyStatus?.remainingTime || calibration?.remainingTime || 0;
+  const isLocked = weeklyStatus?.isLocked || remainingTime > 0;
+  const isMetricsSubmitted = weeklyStatus?.isCurrentWeekSubmitted || calibration?.isWeekSubmitted || false;
 
   const [timeLeft, setTimeLeft] = useState(remainingTime);
 
   const [targetDate, setTargetDate] = useState(
     () => Date.now() + remainingTime * 1000,
   );
+
+  const [hasRefreshed, setHasRefreshed] = useState(false);
+
+  useEffect(() => {
+    setTimeLeft(remainingTime);
+    setHasRefreshed(false);
+  }, [remainingTime]);
 
   useEffect(() => {
     const newTarget = Date.now() + remainingTime * 1000;
@@ -43,25 +58,30 @@ export default function WeeklyCheckin() {
   }, [remainingTime, targetDate]);
 
   useEffect(() => {
-    if (!isLocked || timeLeft <= 0) return;
+    if (timeLeft <= 0) {
+      if (remainingTime > 0 && !hasRefreshed) {
+        setHasRefreshed(true);
+        refetch();
+      }
+      return;
+    }
     const interval = setInterval(() => {
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((targetDate - now) / 1000));
       setTimeLeft(remaining);
-      if (remaining === 0) refetch();
     }, 1000);
     return () => clearInterval(interval);
-  }, [isLocked, targetDate, timeLeft, refetch]);
+  }, [targetDate, timeLeft, remainingTime, hasRefreshed, refetch]);
 
   useEffect(() => {
     if (isLoading || !apiData) return;
     if (
       apiData.userState === "baseline_pending" ||
-      apiData.baseline?.status !== "completed"
+      !isBaselineComplete
     ) {
       navigate("/baseline");
     }
-  }, [apiData, isLoading, navigate]);
+  }, [apiData, isLoading, navigate, baseline]);
 
   const [form, setForm] = useState({
     sleep: 7,
