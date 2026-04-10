@@ -25,20 +25,28 @@ export default function BaselineResults() {
   });
 
   const apiData = data?.data;
-  const baseline = apiData?.baseline;
+  const baselineSubmission = apiData?.submissions?.find((s: any) => s.type === "baseline");
+  const isBaselineComplete = 
+    apiData?.isBaselineCompleted === true || 
+    apiData?.isBaselineSubmitted === true || 
+    apiData?.draftStatus === "completed" ||
+    apiData?.baseline?.status === "completed";
+
+  const baseline = apiData?.baseline || (isBaselineComplete ? { status: "completed", score: baselineSubmission?.nkpi, domains: baselineSubmission?.domainScores } : undefined);
   const calibration = apiData?.calibration;
-  const domains = apiData?.domains || apiData?.baseline?.domains || [];
+  const domains = apiData?.domains || baseline?.domains || [];
   const currentWeek = calibration?.currentWeek || 1;
   const totalWeeks = calibration?.totalWeeks || 6;
+  const weeklyStatus = apiData?.weeklyStatus;
   
-  const initialRemainingTime = calibration?.remainingTime || 0;
+  const initialRemainingTime = weeklyStatus?.remainingTime || 0;
   const [timeLeft, setTimeLeft] = useState(initialRemainingTime);
   const [hasRefreshed, setHasRefreshed] = useState(false);
 
   useEffect(() => {
-    setTimeLeft(calibration?.remainingTime || 0);
+    setTimeLeft(weeklyStatus?.remainingTime || 0);
     setHasRefreshed(false);
-  }, [calibration?.remainingTime]);
+  }, [weeklyStatus?.remainingTime]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -54,8 +62,8 @@ export default function BaselineResults() {
     return () => clearInterval(timer);
   }, [timeLeft, initialRemainingTime, hasRefreshed, refetch]);
 
-  const isLocked = timeLeft > 0;
-  const isSubmitted = calibration?.isWeekSubmitted;
+  const isLocked = timeLeft > 0 || weeklyStatus?.isLocked;
+  const isSubmitted = weeklyStatus?.isCurrentWeekSubmitted || weeklyStatus?.isSubmitted;
 
   const compositeScore = Math.round(apiData?.nkpi || baseline?.score || 0);
   const [animatedValue, setAnimatedValue] = useState(0);
@@ -102,7 +110,7 @@ export default function BaselineResults() {
     );
   }
 
-  if (!baseline || baseline.status !== "completed") {
+  if (!baseline || !isBaselineComplete) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-center px-6">
         <ShieldAlert className="w-12 h-12 text-rose-500/50 mb-6" />

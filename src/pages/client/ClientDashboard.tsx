@@ -9,7 +9,7 @@ import SummaryStatsRow from "../../components/client/Dashboard/SummaryStatsRow";
 import { Activity } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
-import { getBaselineResults } from "../../api/baselineApi";
+import { getBaselineResults, getAssessmentQuestions } from "../../api/baselineApi";
 import { useNavigate } from "react-router-dom";
 import Card from "../../components/ui/Card";
 import { useSelector } from "react-redux";
@@ -35,11 +35,16 @@ export default function ClientDashboard() {
   // 🔹 RAW DATA
   // -------------------------------
   // Build submissions[] for charts from calibration.weeklyMetrics + baseline
+  const baselineSubmission = apiData?.submissions?.find((s: any) => s.type === "baseline");
+
+  // Build submissions[] for charts from calibration.weeklyMetrics + baseline
   const weeklyMetrics = apiData?.calibration?.weeklyMetrics || [];
+  const rawSubmissions = apiData?.submissions || [];
+
   const submissions = [
     // Baseline as week 0
-    ...(apiData?.baseline?.status === "completed"
-      ? [{ type: "baseline" as const, week: 0, nkpi: apiData.baseline.score }]
+    ...(baselineSubmission || apiData?.baseline?.status === "completed"
+      ? [{ type: "baseline" as const, week: 0, nkpi: baselineSubmission?.nkpi || apiData?.baseline?.score }]
       : []),
     // Weekly check-ins
     ...weeklyMetrics.map((wm: any) => ({
@@ -47,7 +52,19 @@ export default function ClientDashboard() {
       week: wm.week,
       nkpi: wm.nkpi_score,
     })),
-  ];
+    // Or if weekly is in rawSubmissions but not weeklyMetrics
+    ...rawSubmissions.filter((s: any) => s.type === 'weekly').map((wm: any) => ({
+      type: "weekly" as const,
+      week: wm.week,
+      nkpi: wm.nkpi,
+    }))
+  ].reduce((acc: any[], curr) => {
+    // deduplicate by week
+    if (!acc.find(item => item.week === curr.week && item.type === curr.type)) {
+      acc.push(curr);
+    }
+    return acc;
+  }, []);
 
   // Derived data — use latest submitted week (highest week number)
   const latestMetric = [...weeklyMetrics].sort((a: any, b: any) => b.week - a.week)[0];
@@ -58,7 +75,7 @@ export default function ClientDashboard() {
   const topSecondaryIssue = apiData?.secondaryIssue; // top-level domain object
 
   // analysisDomains: prefer latest week's domains (most up-to-date), fallback to baseline
-  const rawDomains = latestMetric?.domains || apiData?.domains || apiData?.baseline?.domains || [];
+  const rawDomains = latestMetric?.domains || apiData?.domains || baselineSubmission?.domainScores || apiData?.baseline?.domains || [];
   const analysisDomains = rawDomains.map((d: any) => ({
     domain: d.domain,
     baseline: d.baseline ?? d.score,
@@ -69,7 +86,11 @@ export default function ClientDashboard() {
     status: d.status ?? "Stable",
     phase2: d.triggerPhase2 ? { eligible: true, selected: d.triggerPhase2 } : undefined,
   }));
-  const isBaselineSubmitted = apiData?.baseline?.status === "completed" || apiData?.isBaselineCompleted;
+  const isBaselineSubmitted =
+    apiData?.isBaselineSubmitted === true ||
+    apiData?.draftStatus === "completed" ||
+    apiData?.baseline?.status === "completed" ||
+    apiData?.isBaselineCompleted === true;
   const calibration = apiData?.calibration;
 
   // -------------------------------
@@ -77,16 +98,34 @@ export default function ClientDashboard() {
   // -------------------------------
 
   const draftStatus = apiData?.draftStatus;
+
+  // We need to fetch questions API to get `progress.completed` because `getBaselineResults()`
+  // doesn't return progress on pending/draft baseline.
+  const { data: questionsData } = useQuery({
+    queryKey: ["assessment-questions", 1],
+    queryFn: () => getAssessmentQuestions(1, "baseline"),
+    enabled: (!isBaselineSubmitted && apiData) !== false,
+  });
+
   const answeredCount =
+    questionsData?.progress?.completed ||
     apiData?.progress?.completed ||
     apiData?.baseline?.answeredCount ||
     0;
+
+  const totalQuestions =
+    questionsData?.progress?.total ||
+    apiData?.progress?.total ||
+    apiData?.baseline?.total ||
+    200;
 
   // Progress banner shows if we have started (draft) but not finished.
   // The /scores endpoint signals in-progress baseline via baseline.status === "draft"
   // (the /questions endpoint signals via draftStatus field — support both)
   const isBaselineInProgress =
     draftStatus === "draft" ||
+    draftStatus === "pending" ||
+    questionsData?.draftStatus === "draft" ||
     apiData?.baseline?.status === "draft" ||
     answeredCount > 0;
 
@@ -104,8 +143,8 @@ export default function ClientDashboard() {
       type,
       week: apiData?.calibration?.currentWeek ?? 0,
       answered: answeredCount,
-      total: isBaselineSubmitted ? 30 : (apiData?.progress?.total || apiData?.baseline?.total || 200),
-      status: "draft" as const,
+      total: isBaselineSubmitted ? 30 : totalQuestions,
+      status: (questionsData?.draftStatus || draftStatus || "draft") as "draft" | "pending",
     }
     : undefined;
 
@@ -201,9 +240,7 @@ export default function ClientDashboard() {
         <h4 className="text-white font-bold tracking-tight">
           Performance <span className="text-secondary">Overview</span>
         </h4>
-        <p className="font-medium text-gray-500 text-sm mt-3 flex items-center gap-2">
-          {isBaselineSubmitted ? `Calibration Week ${calibration?.currentWeek ?? 0}` : "Baseline Phase"}
-        </p>
+
       </div>
 
       <div className="text-right">
@@ -228,10 +265,10 @@ export default function ClientDashboard() {
             {showProgressBanner && runningAssessment && (
               <AssessmentBanner runningAssessment={runningAssessment} />
             )}
-            
+
             <Card className="mt-8 text-center p-16 flex flex-col items-center justify-center bg-[#0B0E14]/50 border-white/5 shadow-2xl">
               <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-6 mx-auto">
-                 <Activity size={32} className="text-gray-600" />
+                <Activity size={32} className="text-gray-600" />
               </div>
               <div className="max-w-md mx-auto">
                 <h5 className="text-white font-bold mb-3 text-xl">
@@ -263,12 +300,12 @@ export default function ClientDashboard() {
     <div className="mx-auto px-6 lg:px-10 py-8 animate-in fade-in duration-1000">
       {(mode === "calibrating" || mode === "calibration" || isBaselineSubmitted) && (
         <CalibrationBanner
-          weeksSubmitted={calibration?.currentWeek}
+          weeksSubmitted={weeklyStatus?.currentWeek || calibration?.currentWeek}
           totalWeeks={calibration?.totalWeeks}
           isBaselineSubmitted={isBaselineSubmitted}
-          isLocked={calibration?.isLocked}
-          isWeekSubmitted={calibration?.isWeekSubmitted}
-          remainingTime={calibration?.remainingTime}
+          isLocked={weeklyStatus?.isLocked || calibration?.isLocked}
+          isWeekSubmitted={weeklyStatus?.isCurrentWeekSubmitted || calibration?.isWeekSubmitted}
+          remainingTime={weeklyStatus?.remainingTime || calibration?.remainingTime}
           phase2Required={phase2Required}
           phase2Completed={phase2Completed}
           targetDomain={weeklyStatus?.primaryIssue}
@@ -287,8 +324,8 @@ export default function ClientDashboard() {
       <div className="grid grid-cols-12 gap-8 mb-10 items-start">
         <div className="col-span-12 lg:col-span-4 space-y-8">
           <PerformanceIndexCard submissions={submissions} />
-          <PerformancePressureCard 
-            summary={summary} 
+          <PerformancePressureCard
+            summary={summary}
             topSummary={topSummary}
             recommendations={recommendations}
             primaryIssue={topPrimaryIssue}
@@ -310,7 +347,7 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      <div className="bg-[#0B0E14] rounded-[2.5rem] border border-white/5 p-10 shadow-2xl relative overflow-hidden group">
+      <div className="relative">
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 blur-[120px] group-hover:bg-blue-500/10 transition-all duration-1000" />
         <SummaryStatsRow summary={summary} />
       </div>

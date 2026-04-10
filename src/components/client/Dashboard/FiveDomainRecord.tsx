@@ -43,16 +43,22 @@ export default function FiveDomainRecord({
     <Card title="Domain Performance" className="p-0 overflow-hidden relative group">
        <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 blur-[100px] pointer-events-none" />
 
-       <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex justify-between items-center">
-         <div className="flex items-center gap-2">
-            <Target size={14} className="text-secondary opacity-60" />
-            <span className="text-xs text-secondary font-medium">Update feed</span>
+       <div className="px-6 py-3 bg-white/5 border-b border-white/5 flex gap-4 md:gap-0 flex-col md:flex-row md:justify-between md:items-center">
+         <div className="flex items-center gap-4">
+           <div className="flex items-center gap-2">
+              <Target size={14} className="text-secondary opacity-60" />
+              <span className="text-xs text-secondary font-medium">Update feed</span>
+           </div>
+           <div className="flex items-center gap-1.5">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">System Online</span>
+           </div>
          </div>
-         <div className="flex items-center gap-8 text-[11px] font-medium text-gray-500">
-            <span>Baseline</span>
-            <span>Current</span>
+         <div className="flex items-center justify-between md:justify-end md:gap-8 text-[11px] font-medium text-gray-500 w-full md:w-auto">
+            <span className="w-8 text-right hidden sm:inline">Baseline</span>
+            <span className="w-8 text-right hidden sm:inline">Current</span>
             <span className="w-10 text-center">Delta</span>
-            <span className="w-0 text-center"></span>
+            <span className="w-0 text-center hidden md:inline"></span>
          </div>
        </div>
 
@@ -80,7 +86,7 @@ export default function FiveDomainRecord({
                 key={index}
                 onClick={() => navigate(`/domain/${d.domain}`)}
                 className={`
-                  relative px-6 py-5 border-b border-white/5 cursor-pointer
+                  relative px-6 py-3 border-b border-white/5 cursor-pointer
                   hover:bg-white/[0.03] transition-all group/row
                   ${isWeakest ? "bg-rose-500/5" : ""}
                   last:border-0
@@ -127,13 +133,6 @@ export default function FiveDomainRecord({
               </div>
             );
           })}
-       </div>
-
-       <div className="p-4 bg-white/[0.02] border-t border-white/5 flex justify-center items-center gap-8">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs text-gray-500 font-medium">System Status: Online</span>
-          </div>
        </div>
     </Card>
   );

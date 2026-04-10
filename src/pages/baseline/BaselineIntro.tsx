@@ -18,7 +18,7 @@ export default function BaselineIntro() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { isLoading: isQuestionsLoading, isError } = useQuery({
+  const { data: questionsData, isLoading: isQuestionsLoading, isError } = useQuery({
     queryKey: ["questions", "baseline"],
     queryFn: () => getAssessmentQuestions(1, "baseline"),
   });
@@ -34,11 +34,16 @@ export default function BaselineIntro() {
 
   const apiState = stateData?.data || stateData;
 
-  const isBaselineCompleted = apiState?.isBaselineSubmitted || apiState?.baseline?.status === "completed";
-  const answeredCount = apiState?.progress?.completed || 0;
-  const total = apiState?.progress?.total || 200;
+  const isBaselineCompleted = 
+    apiState?.isBaselineSubmitted || 
+    apiState?.baseline?.status === "completed" || 
+    apiState?.draftStatus === "completed" ||
+    questionsData?.isBaselineCompleted ||
+    questionsData?.draftStatus === "completed";
+  const answeredCount = questionsData?.progress?.completed || apiState?.progress?.completed || 0;
+  const total = questionsData?.progress?.total || apiState?.progress?.total || 200;
   
-  const draftStatus = apiState?.draftStatus || "pending";
+  const draftStatus = questionsData?.draftStatus || apiState?.draftStatus || "pending";
   const currentStatus = getDraftStatusConfig(draftStatus);
 
   const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
@@ -46,7 +51,7 @@ export default function BaselineIntro() {
   const calculatedResumePage = Math.floor(answeredCount / 8) + 1;
   const resumePage = apiState?.resumePage || calculatedResumePage;
 
-  const isResume = draftStatus === "draft" || answeredCount > 0;
+  const isResume = draftStatus === "draft" || draftStatus === "pending" || answeredCount > 0;
 
   useEffect(() => {
     if (isLoading) return;

@@ -49,11 +49,11 @@ export default function PerformancePressureCard({
 
   // Text descriptions
   const primaryText = summary?.primaryIssueText || (primaryIssue
-    ? `${DOMAIN_COLORS[primaryIssue.domain]?.label || primaryIssue.domain} is ${primaryIssue.status.toLowerCase()} — score dropped to ${Math.round(primaryIssue.score)} from baseline ${Math.round(primaryIssue.baseline)}.`
+    ? `${DOMAIN_COLORS[primaryIssue.domain]?.label || primaryIssue.domain} is ${primaryIssue.status?.toLowerCase() || 'unknown'} — score dropped to ${Math.round(primaryIssue.score || 0)} from baseline ${Math.round(primaryIssue.baseline || 0)}.`
     : null);
 
   const secondaryText = summary?.secondaryIssueText || (secondaryIssue
-    ? `${DOMAIN_COLORS[secondaryIssue.domain]?.label || secondaryIssue.domain} is ${secondaryIssue.status.toLowerCase()} — score dropped to ${Math.round(secondaryIssue.score)} from baseline ${Math.round(secondaryIssue.baseline)}.`
+    ? `${DOMAIN_COLORS[secondaryIssue.domain]?.label || secondaryIssue.domain} is ${secondaryIssue.status?.toLowerCase() || 'unknown'} — score dropped to ${Math.round(secondaryIssue.score || 0)} from baseline ${Math.round(secondaryIssue.baseline || 0)}.`
     : null);
 
   const isCritical = primaryIssue?.status === "Critical" || primaryIssue?.status === "At Risk";

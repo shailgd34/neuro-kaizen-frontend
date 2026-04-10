@@ -16,7 +16,12 @@ type ApiResponse = {
   nextDisabled: boolean;
   previousDisabled: boolean;
   isSubmitted: boolean;
-  // Note: progress and draftStatus are fetched via the state API now
+  draftStatus?: string;
+  resumePage?: number;
+  progress?: {
+    completed: number;
+    total: number;
+  };
 };
 
 export default function BaselineAssessment(){
@@ -99,6 +104,9 @@ export default function BaselineAssessment(){
           queryClient.invalidateQueries({
             queryKey: ["assessment-questions"],
           });
+          queryClient.invalidateQueries({
+            queryKey: ["dashboard-data"],
+          });
 
           setTimeout(() => setSaveStatus(""), 800);
         },
@@ -129,17 +137,17 @@ export default function BaselineAssessment(){
   const handleSaveAndExit = () => navigate("/dashboard");
   const handleReview = () => navigate(`${basePath}/review`);
   
-  const completed = apiState?.progress?.completed || 0;
-  const total = apiState?.progress?.total || 200;
+  const completed = data?.progress?.completed || apiState?.progress?.completed || 0;
+  const total = data?.progress?.total || apiState?.progress?.total || 200;
   const minRequired = 180;
   const canReview = completed >= minRequired;
   const QUESTIONS_PER_PAGE = questions.length || 10; // fallback
 
   // calculate page user should be on
-  const resumePage = Math.floor(completed / QUESTIONS_PER_PAGE) + 1;
+  const resumePage = data?.resumePage || Math.floor(completed / QUESTIONS_PER_PAGE) + 1;
 
-  const progress = Math.round((completed / total) * 100);
-  const progressPercent = (completed / total) * 100;
+  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const progressPercent = total > 0 ? (completed / total) * 100 : 0;
 
   const isAlmostDone = progressPercent >= 85;
 

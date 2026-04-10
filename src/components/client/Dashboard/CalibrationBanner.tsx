@@ -94,7 +94,7 @@ export default function CalibrationBanner({
   } else if (isLocked) {
     currentLabel = `Next check-in unlocking in ${formatTime(timeLeft)}`;
     subLabel = "Sit tight — your next calibration window opens soon.";
-    badgeText = "Cooling Period";
+    badgeText = "calibration in Progress";
     showTimer = true;
   } else if (isWeekSubmitted) {
     currentLabel = `Week ${weeksSubmitted} check-in complete`;
@@ -113,7 +113,10 @@ export default function CalibrationBanner({
 
   return (
     <div className="mb-10 animate-in slide-in-from-top-4 duration-1000">
-      <div className="group relative rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden bg-[#0A0D11] border border-secondary/20 shadow-2xl shadow-secondary/10 hover:shadow-secondary/20 transition-all duration-500">
+      <div 
+        className="group relative rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden border border-secondary/20 hover:shadow-secondary/20 transition-all duration-500"
+        style={{ background: 'linear-gradient(90deg, #14171C 0%, #24211B 100%)' }}
+      >
 
         {/* Animated Background Gradients */}
         <div className="absolute -top-32 -left-32 w-64 h-64 bg-secondary/20 blur-[100px] rounded-full mix-blend-screen opacity-50 group-hover:opacity-80 transition-opacity duration-1000 animate-pulse" />

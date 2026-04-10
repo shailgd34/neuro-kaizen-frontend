@@ -32,6 +32,10 @@ import WeeklyCheckin from "../pages/weekly/WeeklyCheckin";
 import Phase2Page from "../pages/phase2/Phase2Page";
 import Phase2Result from "../pages/phase2/Phase2Result";
 import ProfileManage from "../pages/coach/ProfileManage";
+import ClientDetails from "../pages/coach/ClientDetails";
+import ScoringConfiguration from "../pages/coach/ScoringConfiguration";
+
+
 
 export default function AppRoutes() {
   const token = useSelector((state: RootState) => state.auth.token);
@@ -78,11 +82,15 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute allowedRoles={["coach"]} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/clients" element={<ClientManagement />} />
+            <Route path="/clients/:clientId" element={<ClientDetails />} />
             <Route path="/invitations" element={<InviteManagement />} />
             <Route path="/baselinequestions" element={<QuestionBaseline />} />
+            <Route path="/scoring" element={<ScoringConfiguration />} />
             <Route path="/coach/profile" element={<ProfileManage />} />
+
           </Route>
         </Route>
+
 
 
 

@@ -61,7 +61,7 @@ export default function DomainRadarChart({
   // -------------------------------
   return (
     <Card title="Performance Balance" className="relative group">
-      <div className="w-full h-[280px]">
+      <div className="w-full h-[320px]">
         <ResponsiveContainer>
           <RadarChart data={data} outerRadius="75%" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             {/* ... PolarGrid, PolarAngleAxis, etc unchanged ... */}
@@ -118,15 +118,15 @@ export default function DomainRadarChart({
       {/* Domain Quick Links */}
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mt-4 pt-4 border-t border-white/5">
         {analysisDomains.map((d, idx) => (
-          <button 
+          <button
             key={idx}
             onClick={() => navigate(`/domain/${d.domain}`)}
             className="flex items-center gap-2 group/btn"
           >
-             <div className="w-2 h-2 rounded-full bg-secondary group-hover/btn:scale-125 transition-transform" />
-             <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider group-hover/btn:text-white transition-colors">
-               {DOMAIN_LABELS[d.domain] || d.domain}
-             </span>
+            <div className="w-2 h-2 rounded-full bg-secondary group-hover/btn:scale-125 transition-transform" />
+            <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider group-hover/btn:text-white transition-colors">
+              {DOMAIN_LABELS[d.domain] || d.domain}
+            </span>
           </button>
         ))}
       </div>
