@@ -88,7 +88,7 @@ export default function Sidebar() {
     items: [
       { name: "Weekly Overrides", icon: CalendarCheck, path: "/overrides" },
       { name: "Notes Management", icon: NotebookPen, path: "/notes" },
-      { name: "Audit Log", icon: Shield, path: "/audit" },
+      { name: "Audit Log", icon: Shield, path: "/audit-logs" },
     ],
   },
   {

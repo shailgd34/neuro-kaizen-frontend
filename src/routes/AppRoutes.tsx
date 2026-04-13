@@ -34,6 +34,9 @@ import Phase2Result from "../pages/phase2/Phase2Result";
 import ProfileManage from "../pages/coach/ProfileManage";
 import ClientDetails from "../pages/coach/ClientDetails";
 import ScoringConfiguration from "../pages/coach/ScoringConfiguration";
+import ItemResponses from "../pages/coach/ItemResponses";
+import ResponseExplorer from "../pages/coach/ResponseExplorer";
+import AuditLogs from "../pages/coach/AuditLogs";
 
 
 
@@ -82,10 +85,13 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute allowedRoles={["coach"]} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/clients" element={<ClientManagement />} />
+            <Route path="/responses" element={<ItemResponses />} />
+            <Route path="/responses/:clientId" element={<ResponseExplorer />} />
             <Route path="/clients/:clientId" element={<ClientDetails />} />
             <Route path="/invitations" element={<InviteManagement />} />
             <Route path="/baselinequestions" element={<QuestionBaseline />} />
             <Route path="/scoring" element={<ScoringConfiguration />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
             <Route path="/coach/profile" element={<ProfileManage />} />
 
           </Route>
