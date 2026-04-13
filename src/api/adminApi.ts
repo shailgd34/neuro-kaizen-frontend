@@ -134,3 +134,53 @@ export const getAuditLogs = async (page: number = 1, limit: number = 10): Promis
     total: pagination?.total || (resData || []).length || 0
   };
 };
+
+export type ReminderSchedule = {
+  weekly: {
+    day: string;
+    time: string;
+    enabled: boolean;
+  };
+  followUp: {
+    enabled: boolean;
+  };
+  lastUpdated?: string;
+  updatedBy?: string;
+};
+
+export const getReminderSchedule = async (): Promise<ReminderSchedule> => {
+  const response = await api.get("/admins/getReminderSchedule");
+  return response.data.data || response.data;
+};
+
+export const updateReminderSchedule = async (schedule: ReminderSchedule) => {
+  const response = await api.post("/admins/updateReminderSchedule", schedule);
+  return response.data.data || response.data;
+};
+
+export type Note = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  category: 'Progress' | 'Biometric Drift' | 'Session' | 'Strategy' | 'General';
+  content: string;
+  timestamp: string;
+  author: string;
+};
+
+export const getNotes = async (clientId?: string): Promise<Note[]> => {
+  const response = await api.get("/admins/getNotes", {
+    params: { clientId }
+  });
+  return response.data.data || response.data || [];
+};
+
+export const upsertNote = async (note: Partial<Note>) => {
+  const response = await api.post("/admins/upsertNote", note);
+  return response.data.data || response.data;
+};
+
+export const deleteNote = async (noteId: string) => {
+  const response = await api.delete(`/admins/deleteNote/${noteId}`);
+  return response.data.data || response.data;
+};

@@ -37,6 +37,8 @@ import ScoringConfiguration from "../pages/coach/ScoringConfiguration";
 import ItemResponses from "../pages/coach/ItemResponses";
 import ResponseExplorer from "../pages/coach/ResponseExplorer";
 import AuditLogs from "../pages/coach/AuditLogs";
+import ReminderScheduling from "../pages/coach/ReminderScheduling";
+import NotesManagement from "../pages/coach/NotesManagement";
 
 
 
@@ -92,6 +94,8 @@ export default function AppRoutes() {
             <Route path="/baselinequestions" element={<QuestionBaseline />} />
             <Route path="/scoring" element={<ScoringConfiguration />} />
             <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/reminders" element={<ReminderScheduling />} />
+            <Route path="/notes" element={<NotesManagement />} />
             <Route path="/coach/profile" element={<ProfileManage />} />
 
           </Route>
