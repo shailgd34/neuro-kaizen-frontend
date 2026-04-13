@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { API } from "../../api";
 
 import Card from "../../components/ui/Card";
 import { Lock, Info, CheckCircle2, Save, Settings2 } from "lucide-react";
@@ -6,6 +7,10 @@ import { toast } from "react-toastify";
 
 
 export default function ScoringConfiguration() {
+   const [isLoading, setIsLoading] = useState(false);
+   const [configVersion, setConfigVersion] = useState("v2.4.1");
+   const [lastUpdated, setLastUpdated] = useState("2024-01-15 14:32 UTC");
+
    const [thresholds, setThresholds] = useState({
       stableMin: "0.00",
       stableMax: "0.15",
@@ -22,6 +27,29 @@ export default function ScoringConfiguration() {
       nkpiVariance: "0.03"
    });
 
+   useEffect(() => {
+     const fetchConfig = async () => {
+       try {
+         setIsLoading(true);
+         const config = await API.admin.getScoringConfig();
+         if (config) {
+           if (config.thresholds) setThresholds(config.thresholds);
+           if (config.calibration) setCalibration(config.calibration);
+           if (config.version) setConfigVersion(config.version);
+           // If updatedAt exists in API, we can set it here
+           // @ts-ignore
+           if (config.updatedAt) setLastUpdated(config.updatedAt);
+         }
+       } catch (error) {
+         console.error("Failed to fetch scoring config:", error);
+         // toast.error("Failed to load scoring configuration");
+       } finally {
+         setIsLoading(false);
+       }
+     };
+     fetchConfig();
+   }, []);
+
    const domainWeights = [
       { name: "Cognitive Weight", value: "30", status: "Valid" },
       { name: "Recovery Weight", value: "30", status: "Valid" },
@@ -30,17 +58,24 @@ export default function ScoringConfiguration() {
       { name: "Friction Weight", value: "-10", status: "Valid", subtractive: true },
    ];
 
-   const handleSave = () => {
+   const handleSave = async () => {
       const configPayload = {
-         version: "v2.4.1",
-         updatedAt: new Date().toISOString(),
+         version: configVersion,
          thresholds,
          calibration
       };
 
-      console.log(">>> SCORING CONFIGURATION PAYLOAD <<<");
-      console.log(JSON.stringify(configPayload, null, 2));
-      toast.success("Configuration printed to console. Check browser console for API structure.");
+      try {
+        setIsLoading(true);
+        await API.admin.upsertScoringConfig(configPayload);
+        toast.success("Configuration updated successfully");
+        setLastUpdated(new Date().toISOString());
+      } catch (error) {
+        console.error("Failed to update scoring config:", error);
+        toast.error("Failed to update scoring configuration");
+      } finally {
+        setIsLoading(false);
+      }
    };
 
 
@@ -59,11 +94,11 @@ export default function ScoringConfiguration() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                <Card className="p-6 bg-[#0B0F1A] border-white/5">
                   <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Current Logic Version</span>
-                  <span className="text-xl font-bold text-white">v2.4.1</span>
+                  <span className="text-xl font-bold text-white">{configVersion}</span>
                </Card>
                <Card className="p-6 bg-[#0B0F1A] border-white/5">
                   <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Last Updated</span>
-                  <span className="text-xl font-bold text-white uppercase tabular-nums">2024-01-15 14:32 UTC</span>
+                  <span className="text-xl font-bold text-white uppercase tabular-nums">{lastUpdated}</span>
                </Card>
                <Card className="p-6 bg-[#0B0F1A] border-white/5">
                   <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-1">Updated By</span>
@@ -248,10 +283,11 @@ export default function ScoringConfiguration() {
                   </button>
                   <button 
                     onClick={handleSave}
-                    className="px-8 py-3.5 gold-gradient text-black font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transition-all flex items-center gap-2"
+                     className={`px-8 py-3.5 gold-gradient text-black font-black uppercase text-xs tracking-[0.2em] rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.2)] transition-all flex items-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                     disabled={isLoading}
                   >
-                     <Save className="w-4 h-4" />
-                     Save Configuration
+                     <Save className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                     {isLoading ? 'Saving...' : 'Save Configuration'}
                   </button>
                </div>
             </div>
