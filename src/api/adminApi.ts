@@ -135,26 +135,23 @@ export const getAuditLogs = async (page: number = 1, limit: number = 10): Promis
   };
 };
 
-export type ReminderSchedule = {
-  weekly: {
-    day: string;
-    time: string;
-    enabled: boolean;
-  };
-  followUp: {
-    enabled: boolean;
-  };
+export type ReminderConfig = {
+  reminder_day: string;
+  reminder_time: string;
+  weekly_enabled: boolean;
+  followup_enabled: boolean;
+  followup_after_hours: number;
   lastUpdated?: string;
   updatedBy?: string;
 };
 
-export const getReminderSchedule = async (): Promise<ReminderSchedule> => {
-  const response = await api.get("/admins/getReminderSchedule");
+export const getReminderConfig = async (): Promise<ReminderConfig> => {
+  const response = await api.get("/admins/getReminderConfig");
   return response.data.data || response.data;
 };
 
-export const updateReminderSchedule = async (schedule: ReminderSchedule) => {
-  const response = await api.post("/admins/updateReminderSchedule", schedule);
+export const upsertReminderConfig = async (config: ReminderConfig) => {
+  const response = await api.post("/admins/upsertReminderConfig", config);
   return response.data.data || response.data;
 };
 
