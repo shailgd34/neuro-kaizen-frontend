@@ -39,6 +39,7 @@ import ResponseExplorer from "../pages/coach/ResponseExplorer";
 import AuditLogs from "../pages/coach/AuditLogs";
 import ReminderScheduling from "../pages/coach/ReminderScheduling";
 import NotesManagement from "../pages/coach/NotesManagement";
+import ClientAnalytics from "../pages/coach/ClientAnalytics";
 
 
 
@@ -96,6 +97,7 @@ export default function AppRoutes() {
             <Route path="/audit-logs" element={<AuditLogs />} />
             <Route path="/reminders" element={<ReminderScheduling />} />
             <Route path="/notes" element={<NotesManagement />} />
+            <Route path="/analytics" element={<ClientAnalytics />} />
             <Route path="/coach/profile" element={<ProfileManage />} />
 
           </Route>
